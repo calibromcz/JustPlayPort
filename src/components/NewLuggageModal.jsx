@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { X, Plane, Sparkles, AlertCircle, Check, Package, Store } from 'lucide-react'
+import { X, Plane, Sparkles, AlertCircle, Check, Package, ChevronDown } from 'lucide-react'
 import { calculateItemPriceWithQuantity } from '../utils/pricing.js'
 
 const PAYMENT_OPTIONS = [
@@ -41,7 +41,7 @@ export function NewLuggageModal({
     }
   }, [isOpen, initialShopId, savedPassengerName])
 
-  // Blocco scroll body
+  // Blocco scroll body quando aperta
   useEffect(() => {
     if (isOpen) {
       const prev = document.body.style.overflow
@@ -97,7 +97,7 @@ export function NewLuggageModal({
       setTimeout(() => {
         setJustAdded(false)
         onClose()
-      }, 900)
+      }, 800)
       return
     }
 
@@ -146,288 +146,310 @@ export function NewLuggageModal({
 
   return (
     <div
-      className="fixed inset-0 z-[2000] flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-sm animate-fade-in"
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0, 0, 0, 0.5)',
+        zIndex: 2000,
+        backdropFilter: 'blur(4px)',
+        WebkitBackdropFilter: 'blur(4px)',
+      }}
+      className="flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in"
       onClick={onClose}
     >
       <div
-        className={`w-full max-w-lg max-h-[92vh] rounded-3xl border shadow-2xl flex flex-col overflow-hidden animate-ticket-pop-in transition-all ${
+        className={`w-full max-w-lg rounded-t-3xl sm:rounded-3xl border shadow-2xl flex flex-col overflow-hidden animate-slide-up sm:animate-ticket-pop-in transition-all ${
           isNightMode
             ? 'bg-[#18181b] border-white/10 text-white shadow-black/80'
             : 'bg-white border-slate-200 text-slate-900 shadow-slate-900/20'
         }`}
+        style={{
+          maxHeight: '90vh',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Intestazione iOS Sheet */}
-        <div className={`p-4 border-b flex items-center justify-between shrink-0 ${
+        {/* REQUISITO 1: Header della modale con titolo al centro e pulsante Annulla/✕ in alto a destra */}
+        <div className={`px-4 py-3 sm:px-5 sm:py-3.5 border-b flex items-center justify-between shrink-0 ${
           isNightMode ? 'border-white/10 bg-white/5' : 'border-slate-100 bg-slate-50'
         }`}>
-          <div className="flex items-center gap-2">
+          {/* Spazio bilanciato a sinistra per centratura titolo */}
+          <div className="w-8 shrink-0 flex items-center">
             <span className="text-xl">✈️</span>
-            <div>
-              <h2 className="text-base sm:text-lg font-bold tracking-tight">Nuovo Bagaglio</h2>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">Imbarca un gioco al Gate o aggiungilo all'Hangar</p>
-            </div>
           </div>
+
+          <div className="text-center flex-1 min-w-0">
+            <h2 className="text-base sm:text-lg font-bold tracking-tight truncate">Nuovo Bagaglio</h2>
+          </div>
+
+          {/* Pulsante ✕ / Annulla */}
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-800 dark:hover:text-white bg-slate-200/60 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 transition-colors cursor-pointer"
-            aria-label="Chiudi modale"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:text-slate-800 dark:hover:text-white bg-slate-200/60 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 transition-colors cursor-pointer shrink-0"
+            aria-label="Annulla e chiudi"
+            title="Annulla"
           >
             <X className="w-4 h-4 stroke-[2.5]" />
           </button>
         </div>
 
-        {/* Corpo Form Scorrevole */}
-        <form onSubmit={handleSubmit} className="p-4 sm:p-5 overflow-y-auto space-y-4 flex-1">
-          {/* 1. SELETTORE DEL GATE / STORE */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2">
-              Seleziona Gate / Store
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {shops.map((s) => {
-                const isSelected = s.id === selectedShopId
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => setSelectedShopId(s.id)}
-                    className={`p-2.5 rounded-xl border text-left text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
-                      isSelected
-                        ? 'bg-blue-600 text-white border-blue-600 shadow-md ring-2 ring-blue-500/30'
-                        : isNightMode
-                        ? 'bg-white/5 border-white/10 text-slate-200 hover:bg-white/10'
-                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+        {/* REQUISITO 3: Contenitore scrollabile (overflow-y: auto; max-height: 75vh;) */}
+        <div
+          className="overflow-y-auto px-4 py-4 sm:px-5 sm:py-5 flex-1"
+          style={{ maxHeight: '75vh' }}
+        >
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* REQUISITO 2: MENU A TENDINA PER LA SCELTA DELLO STORE (OCCUPA UNA SOLA RIGA) */}
+            <div>
+              <label htmlFor="modal-store-select" className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">
+                Seleziona Gate / Store
+              </label>
+              <div className="relative">
+                <select
+                  id="modal-store-select"
+                  value={selectedShopId}
+                  onChange={(e) => setSelectedShopId(e.target.value)}
+                  className={`w-full py-2.5 pl-3 pr-10 rounded-xl border text-sm font-bold appearance-none transition-all outline-hidden cursor-pointer ${
+                    isNightMode
+                      ? 'bg-zinc-900 border-white/20 text-white focus:border-blue-500'
+                      : 'bg-white border-slate-300 text-slate-800 focus:border-blue-600 shadow-2xs'
+                  }`}
+                >
+                  {shops.map((s) => (
+                    <option key={s.id} value={s.id} className="text-slate-900 bg-white dark:text-white dark:bg-zinc-900">
+                      {s.name} {s.discount ? `(${s.discount})` : ''}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
+            </div>
+
+            {/* NOME PASSEGGERO & NOME GIOCO */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold mb-1 text-slate-700 dark:text-slate-300">
+                  Socio / Passeggero <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={passengerName}
+                  onChange={(e) => setPassengerName(e.target.value)}
+                  placeholder="Nome socio"
+                  className={`w-full px-3 py-2 rounded-xl border text-sm font-medium transition-colors outline-hidden ${
+                    isNightMode
+                      ? 'bg-white/5 border-white/10 text-white focus:border-blue-500'
+                      : 'bg-white border-slate-300 text-slate-900 focus:border-blue-600'
+                  }`}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold mb-1 text-slate-700 dark:text-slate-300">
+                  Nome Gioco <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={gameName}
+                  onChange={(e) => setGameName(e.target.value)}
+                  placeholder="es. Scythe, Dune..."
+                  className={`w-full px-3 py-2 rounded-xl border text-sm font-medium transition-colors outline-hidden ${
+                    isNightMode
+                      ? 'bg-white/5 border-white/10 text-white focus:border-blue-500'
+                      : 'bg-white border-slate-300 text-slate-900 focus:border-blue-600'
+                  }`}
+                  required
+                />
+              </div>
+            </div>
+
+            {/* PREZZO DI LISTINO & QUANTITÀ */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold mb-1 text-slate-700 dark:text-slate-300">
+                  Prezzo Listino (€) <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={rawPriceInput}
+                  onChange={(e) => setRawPriceInput(e.target.value)}
+                  placeholder="es. 49.90"
+                  className={`w-full px-3 py-2 rounded-xl border text-sm font-bold font-mono-code transition-colors outline-hidden ${
+                    isNightMode
+                      ? 'bg-white/5 border-white/10 text-white focus:border-blue-500'
+                      : 'bg-white border-slate-300 text-slate-900 focus:border-blue-600'
+                  }`}
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold mb-1 text-slate-700 dark:text-slate-300">
+                  Quantità
+                </label>
+                <div className="relative">
+                  <select
+                    value={quantity}
+                    onChange={(e) => setQuantity(parseInt(e.target.value, 10))}
+                    className={`w-full py-2 pl-3 pr-8 rounded-xl border text-sm font-bold font-mono-code transition-colors outline-hidden appearance-none cursor-pointer ${
+                      isNightMode
+                        ? 'bg-zinc-900 border-white/10 text-white focus:border-blue-500'
+                        : 'bg-white border-slate-300 text-slate-900 focus:border-blue-600'
                     }`}
                   >
-                    <Store className="w-4 h-4 shrink-0" />
-                    <span className="truncate">{s.name}</span>
-                  </button>
-                )
-              })}
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+                      <option key={n} value={n} className="text-slate-900 bg-white dark:text-white dark:bg-zinc-900">
+                        {n}x
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+              </div>
             </div>
-          </div>
 
-          {/* 2. NOME PASSEGGERO & NOME GIOCO */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* LINK OPZIONALE */}
             <div>
               <label className="block text-xs font-semibold mb-1 text-slate-700 dark:text-slate-300">
-                Socio / Passeggero <span className="text-rose-500">*</span>
+                Link del gioco / Note (opzionale)
               </label>
               <input
-                type="text"
-                value={passengerName}
-                onChange={(e) => setPassengerName(e.target.value)}
-                placeholder="Nome socio"
-                className={`w-full px-3 py-2 rounded-xl border text-sm font-medium transition-colors outline-hidden ${
+                type="url"
+                value={gameUrl}
+                onChange={(e) => setGameUrl(e.target.value)}
+                placeholder="https://..."
+                className={`w-full px-3 py-2 rounded-xl border text-sm transition-colors outline-hidden ${
                   isNightMode
                     ? 'bg-white/5 border-white/10 text-white focus:border-blue-500'
                     : 'bg-white border-slate-300 text-slate-900 focus:border-blue-600'
                 }`}
-                required
               />
             </div>
+
+            {/* METODO DI PAGAMENTO */}
             <div>
-              <label className="block text-xs font-semibold mb-1 text-slate-700 dark:text-slate-300">
-                Nome Gioco <span className="text-rose-500">*</span>
+              <label className="block text-xs font-semibold mb-1.5 text-slate-700 dark:text-slate-300">
+                Metodo di Pagamento
               </label>
-              <input
-                type="text"
-                value={gameName}
-                onChange={(e) => setGameName(e.target.value)}
-                placeholder="es. Scythe, Dune..."
-                className={`w-full px-3 py-2 rounded-xl border text-sm font-medium transition-colors outline-hidden ${
-                  isNightMode
-                    ? 'bg-white/5 border-white/10 text-white focus:border-blue-500'
-                    : 'bg-white border-slate-300 text-slate-900 focus:border-blue-600'
-                }`}
-                required
-              />
+              <div className="flex gap-2">
+                {PAYMENT_OPTIONS.map((opt) => {
+                  const isSelected = paymentMethod === opt.id
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => setPaymentMethod(opt.id)}
+                      className={`flex-1 py-2 px-2.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                        isSelected
+                          ? `${opt.activeColor} shadow-md ring-2 ring-blue-500/30`
+                          : isNightMode
+                          ? 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
+                          : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      <span>{opt.emoji}</span>
+                      <span>{opt.label}</span>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
-          </div>
 
-          {/* 3. PREZZO DI LISTINO & QUANTITÀ */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold mb-1 text-slate-700 dark:text-slate-300">
-                Prezzo Listino (€) <span className="text-rose-500">*</span>
+            {/* CHECKBOX "GIÀ IN OFFERTA" & "PREORDINE IN HANGAR" */}
+            <div className="space-y-2 pt-1">
+              <label className={`flex items-center gap-2.5 p-2.5 rounded-xl border cursor-pointer select-none ${
+                isNightMode ? 'bg-white/5 border-white/10' : 'bg-slate-50 border-slate-200'
+              }`}>
+                <input
+                  type="checkbox"
+                  checked={isAlreadyOnSale}
+                  onChange={(e) => setIsAlreadyOnSale(e.target.checked)}
+                  className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600"
+                />
+                <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                  Già in offerta? <span className="text-[11px] text-slate-500 dark:text-slate-400">(Nessun ulteriore sconto convenzione)</span>
+                </span>
               </label>
-              <input
-                type="text"
-                value={rawPriceInput}
-                onChange={(e) => setRawPriceInput(e.target.value)}
-                placeholder="es. 49.90"
-                className={`w-full px-3 py-2 rounded-xl border text-sm font-bold font-mono-code transition-colors outline-hidden ${
-                  isNightMode
-                    ? 'bg-white/5 border-white/10 text-white focus:border-blue-500'
-                    : 'bg-white border-slate-300 text-slate-900 focus:border-blue-600'
-                }`}
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold mb-1 text-slate-700 dark:text-slate-300">
-                Quantità
+
+              <label className={`flex items-center gap-2.5 p-2.5 rounded-xl border cursor-pointer select-none ${
+                isPreorder
+                  ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-300'
+                  : isNightMode
+                  ? 'bg-white/5 border-white/10'
+                  : 'bg-slate-50 border-slate-200'
+              }`}>
+                <input
+                  type="checkbox"
+                  checked={isPreorder}
+                  onChange={(e) => setIsPreorder(e.target.checked)}
+                  className="w-4 h-4 rounded text-amber-500 focus:ring-amber-500 cursor-pointer accent-amber-500"
+                />
+                <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                  📦 Metti in Hangar Prevendite <span className="text-[11px] text-slate-500 dark:text-slate-400">(Preordine in attesa)</span>
+                </span>
               </label>
-              <select
-                value={quantity}
-                onChange={(e) => setQuantity(parseInt(e.target.value, 10))}
-                className={`w-full px-3 py-2 rounded-xl border text-sm font-bold font-mono-code transition-colors outline-hidden cursor-pointer ${
-                  isNightMode
-                    ? 'bg-white/5 border-white/10 text-white focus:border-blue-500'
-                    : 'bg-white border-slate-300 text-slate-900 focus:border-blue-600'
-                }`}
-              >
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
-                  <option key={n} value={n} className="text-slate-900 bg-white">
-                    {n}x
-                  </option>
-                ))}
-              </select>
             </div>
-          </div>
 
-          {/* 4. LINK OPZIONALE */}
-          <div>
-            <label className="block text-xs font-semibold mb-1 text-slate-700 dark:text-slate-300">
-              Link del gioco / Note (opzionale)
-            </label>
-            <input
-              type="url"
-              value={gameUrl}
-              onChange={(e) => setGameUrl(e.target.value)}
-              placeholder="https://..."
-              className={`w-full px-3 py-2 rounded-xl border text-sm transition-colors outline-hidden ${
-                isNightMode
-                  ? 'bg-white/5 border-white/10 text-white focus:border-blue-500'
-                  : 'bg-white border-slate-300 text-slate-900 focus:border-blue-600'
-              }`}
-            />
-          </div>
-
-          {/* 5. METODO DI PAGAMENTO */}
-          <div>
-            <label className="block text-xs font-semibold mb-1.5 text-slate-700 dark:text-slate-300">
-              Metodo di Pagamento
-            </label>
-            <div className="flex gap-2">
-              {PAYMENT_OPTIONS.map((opt) => {
-                const isSelected = paymentMethod === opt.id
-                return (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => setPaymentMethod(opt.id)}
-                    className={`flex-1 py-2 px-2.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                      isSelected
-                        ? `${opt.activeColor} shadow-md ring-2 ring-blue-500/30`
-                        : isNightMode
-                        ? 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
-                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
-                    }`}
-                  >
-                    <span>{opt.emoji}</span>
-                    <span>{opt.label}</span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* 6. CHECKBOX "GIÀ IN OFFERTA" & "PREORDINE IN HANGAR" */}
-          <div className="space-y-2 pt-1">
-            <label className={`flex items-center gap-2.5 p-2.5 rounded-xl border cursor-pointer select-none ${
-              isNightMode ? 'bg-white/5 border-white/10' : 'bg-slate-50 border-slate-200'
-            }`}>
-              <input
-                type="checkbox"
-                checked={isAlreadyOnSale}
-                onChange={(e) => setIsAlreadyOnSale(e.target.checked)}
-                className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600"
-              />
-              <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                Già in offerta? <span className="text-[11px] text-slate-500 dark:text-slate-400">(Nessun ulteriore sconto convenzione)</span>
-              </span>
-            </label>
-
-            <label className={`flex items-center gap-2.5 p-2.5 rounded-xl border cursor-pointer select-none ${
-              isPreorder
-                ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-300'
-                : isNightMode
-                ? 'bg-white/5 border-white/10'
-                : 'bg-slate-50 border-slate-200'
-            }`}>
-              <input
-                type="checkbox"
-                checked={isPreorder}
-                onChange={(e) => setIsPreorder(e.target.checked)}
-                className="w-4 h-4 rounded text-amber-500 focus:ring-amber-500 cursor-pointer accent-amber-500"
-              />
-              <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                📦 Metti in Hangar Prevendite <span className="text-[11px] text-slate-500 dark:text-slate-400">(Preordine in attesa)</span>
-              </span>
-            </label>
-          </div>
-
-          {/* ANTEPRIMA PREZZO IN TEMPO REALE */}
-          {previewInfo && !isPreorder && (
-            <div className={`p-3 rounded-2xl border text-xs flex items-center justify-between gap-2 shadow-xs ${
-              isNightMode ? 'bg-blue-950/30 border-blue-500/30 text-blue-200' : 'bg-blue-50 border-blue-200 text-blue-900'
-            }`}>
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-blue-500 shrink-0" />
-                <span>Prezzo Netto Stimato: <strong className="font-mono-code text-sm font-bold">{previewInfo.finalPrice.toFixed(2)}€</strong></span>
-                {previewInfo.discountBadge && !isAlreadyOnSale && (
-                  <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-blue-600 text-white">
-                    {previewInfo.discountBadge}
+            {/* ANTEPRIMA PREZZO IN TEMPO REALE */}
+            {previewInfo && !isPreorder && (
+              <div className={`p-3 rounded-2xl border text-xs flex items-center justify-between gap-2 shadow-xs ${
+                isNightMode ? 'bg-blue-950/30 border-blue-500/30 text-blue-200' : 'bg-blue-50 border-blue-200 text-blue-900'
+              }`}>
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-blue-500 shrink-0" />
+                  <span>Prezzo Netto Stimato: <strong className="font-mono-code text-sm font-bold">{previewInfo.finalPrice.toFixed(2)}€</strong></span>
+                  {previewInfo.discountBadge && !isAlreadyOnSale && (
+                    <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-blue-600 text-white">
+                      {previewInfo.discountBadge}
+                    </span>
+                  )}
+                </div>
+                {previewInfo.savings > 0 && (
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                    Risparmio: +{previewInfo.savings.toFixed(2)}€
                   </span>
                 )}
               </div>
-              {previewInfo.savings > 0 && (
-                <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                  Risparmio: +{previewInfo.savings.toFixed(2)}€
-                </span>
-              )}
-            </div>
-          )}
-
-          {formError && (
-            <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{formError}</span>
-            </div>
-          )}
-
-          {/* PULSANTE PRIMARIO */}
-          <button
-            type="submit"
-            className={`w-full py-3.5 px-4 rounded-2xl font-bold text-sm text-white flex items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] cursor-pointer ${
-              justAdded
-                ? 'bg-emerald-600 shadow-emerald-500/30'
-                : isPreorder
-                ? 'bg-amber-600 hover:bg-amber-500 shadow-amber-600/30'
-                : 'bg-blue-600 hover:bg-blue-500 shadow-blue-600/30'
-            }`}
-          >
-            {justAdded ? (
-              <>
-                <Check className="w-5 h-5 stroke-[2.5]" />
-                <span>{isPreorder ? 'Aggiunto in Hangar! 📦' : 'Imbarcato con successo! ✈️'}</span>
-              </>
-            ) : isPreorder ? (
-              <>
-                <Package className="w-5 h-5" />
-                <span>Salva in Hangar Prevendite</span>
-              </>
-            ) : (
-              <>
-                <Plane className="w-5 h-5" />
-                <span>Imbarca al Gate {selectedShop.name}</span>
-              </>
             )}
-          </button>
-        </form>
+
+            {formError && (
+              <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{formError}</span>
+              </div>
+            )}
+
+            {/* REQUISITO 3: PULSANTE DI SUBMIT "✈️ Imbarca al Gate" CON PADDING INFERIORE */}
+            <div className="pt-2 pb-10">
+              <button
+                type="submit"
+                className={`w-full py-4 px-4 rounded-2xl font-black text-base text-white flex items-center justify-center gap-2 shadow-lg transition-all active:scale-[0.98] cursor-pointer ${
+                  justAdded
+                    ? 'bg-emerald-600 shadow-emerald-500/30'
+                    : isPreorder
+                    ? 'bg-amber-600 hover:bg-amber-500 shadow-amber-600/30'
+                    : 'bg-blue-600 hover:bg-blue-500 shadow-blue-600/30'
+                }`}
+              >
+                {justAdded ? (
+                  <>
+                    <Check className="w-5 h-5 stroke-[2.5]" />
+                    <span>{isPreorder ? 'Aggiunto in Hangar! 📦' : 'Imbarcato con successo! ✈️'}</span>
+                  </>
+                ) : isPreorder ? (
+                  <>
+                    <Package className="w-5 h-5" />
+                    <span>Salva in Hangar Prevendite</span>
+                  </>
+                ) : (
+                  <>
+                    <Plane className="w-5 h-5" />
+                    <span>✈️ Imbarca al Gate</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   )

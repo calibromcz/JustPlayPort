@@ -62,7 +62,7 @@ export function FloatingBottomBar({
         <span style={{ fontSize: '11px', fontWeight: 600 }}>Passaporto</span>
       </button>
 
-      {/* 3. TASTO CENTRALE '+' (Nuovo Imbarco) */}
+      {/* 3. TASTO CENTRALE '+' (Nuovo Imbarco - Esclusivo Mobile < 768px) */}
       <button
         type="button"
         onClick={onOpenNewLuggage}
@@ -76,14 +76,13 @@ export function FloatingBottomBar({
           fontWeight: 500,
           boxShadow: '0 6px 18px rgba(0, 122, 255, 0.4)',
           border: 'none',
-          display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           transition: 'transform 0.15s ease',
           margin: '0 4px',
           flexShrink: 0,
         }}
-        className="cursor-pointer active:scale-90 hover:scale-105"
+        className="flex md:hidden cursor-pointer active:scale-90 hover:scale-105"
         title="Imbarca Nuovo Gioco al Gate"
         aria-label="Nuovo Imbarco"
       >
