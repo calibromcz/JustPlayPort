@@ -1151,75 +1151,137 @@ export function GateAccordionItem({
                 Nessun gioco imbarcato per questo volo. Aggiungi il primo passeggero sopra!
               </div>
             ) : (
-              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+              <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
                 {effectiveItems.map((it) => {
                   const qty = it.quantita || 1
                   return (
                     <div
                       key={it.id}
-                      className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/80 flex flex-wrap items-start justify-between gap-2 text-xs transition-all animate-ticket-pop-in shadow-2xs"
+                      style={{ padding: '12px' }}
+                      className="rounded-xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/80 flex items-start justify-between gap-2.5 transition-all animate-ticket-pop-in shadow-2xs"
                     >
-                      <div className="flex-1 min-w-[200px] font-bold space-y-1.5">
-                        {/* 1. Dati Primari: Nome socio, Quantità e Nome Gioco */}
-                        <div className="text-xs sm:text-sm font-black break-words leading-snug flex flex-wrap items-center gap-1.5">
-                          <span className="inline-flex items-center gap-1 text-slate-900 dark:text-slate-100">
-                            <span className="text-slate-500 dark:text-slate-400 font-normal select-none">👤</span>
-                            <span>{it.nome_utente}</span>
+                      <div className="flex-1 min-w-0 space-y-1.5">
+                        {/* 1. Dati Primari: Slot partecipante compatto e Titolo Gioco a 2 righe max */}
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 min-w-0">
+                          {/* Slot Partecipante / Utente */}
+                          <span
+                            style={{ padding: '3px 8px', fontSize: '11px', borderRadius: '8px' }}
+                            className="inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold shrink-0 self-start"
+                          >
+                            <span className="text-slate-400 select-none">👤</span>
+                            <span className="truncate max-w-[120px]">{it.nome_utente}</span>
                           </span>
-                          <span className="text-slate-500 dark:text-slate-400 font-normal select-none">•</span>
-                          <span className="inline-flex items-center gap-1 text-slate-900 dark:text-slate-100">
-                            <span className="text-slate-500 dark:text-slate-400 font-normal select-none">🎲</span>
+
+                          {/* Titolo Gioco con limite a 2 righe pulite */}
+                          <div className="min-w-0 flex-1">
                             {it.url ? (
                               <a
                                 href={it.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-sky-600 dark:text-sky-400 font-medium hover:underline inline-flex items-center gap-1.5"
-                                title="Apri link negozio"
+                                style={{
+                                  fontSize: '14px',
+                                  fontWeight: 600,
+                                  lineHeight: 1.25,
+                                  display: '-webkit-box',
+                                  WebkitLineClamp: 2,
+                                  WebkitBoxOrient: 'vertical',
+                                  overflow: 'hidden',
+                                }}
+                                className="text-sky-600 dark:text-sky-400 hover:underline break-words"
+                                title={it.nome_gioco}
                                 onClick={(e) => e.stopPropagation()}
                               >
-                                <span>{qty}x {it.nome_gioco}</span>
-                                <span className="text-[10px] opacity-70 select-none">🔗</span>
+                                {qty > 1 && <span className="font-bold text-slate-800 dark:text-slate-200 mr-1">{qty}x</span>}
+                                {it.nome_gioco}
+                                <span className="text-[10px] opacity-70 ml-1 select-none">🔗</span>
                               </a>
                             ) : (
-                              <span>{qty}x {it.nome_gioco}</span>
+                              <span
+                                style={{
+                                  fontSize: '14px',
+                                  fontWeight: 600,
+                                  lineHeight: 1.25,
+                                  display: '-webkit-box',
+                                  WebkitLineClamp: 2,
+                                  WebkitBoxOrient: 'vertical',
+                                  overflow: 'hidden',
+                                }}
+                                className="text-slate-900 dark:text-slate-100 break-words"
+                              >
+                                {qty > 1 && <span className="font-bold text-slate-800 dark:text-slate-200 mr-1">{qty}x</span>}
+                                {it.nome_gioco}
+                              </span>
                             )}
-                          </span>
+                          </div>
                         </div>
 
-                        {/* 2. Badge e Prezzo: riga secondaria con wrap pulito */}
-                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                          <span className="inline-flex items-center">
-                            <span className="text-slate-500 dark:text-slate-400 mr-1 select-none">💰</span>
-                            <strong className="font-mono-code font-bold text-slate-900 dark:text-amber-400">{it.prezzo.toFixed(2)}€</strong>
+                        {/* 2. Badge e Prezzo: griglia ordinata flex con wrap e tabular-nums */}
+                        <div
+                          style={{ gap: '6px' }}
+                          className="flex flex-wrap items-center text-xs"
+                        >
+                          {/* Prezzo Finale Scontato */}
+                          <span
+                            style={{ whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}
+                            className="inline-flex items-center font-mono-code font-black text-sm text-emerald-700 dark:text-emerald-400"
+                          >
+                            💰 {it.prezzo.toFixed(2)} €
                             {isForcedActive && (
-                              <span className="text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 ml-1">
-                                + {shippingPerPassenger.toFixed(2).replace('.', ',')}€ sped.
+                              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 ml-1">
+                                +{shippingPerPassenger.toFixed(2).replace('.', ',')}€ sped.
                               </span>
                             )}
                           </span>
+
+                          {/* Prezzo Listino Originale se presente e diverso */}
+                          {it.prezzo_listino_totale > 0 && Math.abs(it.prezzo_listino_totale - it.prezzo) > 0.05 && (
+                            <span
+                              style={{ whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}
+                              className="text-[11px] font-mono-code line-through text-slate-400 dark:text-slate-500"
+                              title="Prezzo di Listino"
+                            >
+                              {it.prezzo_listino_totale.toFixed(2)} €
+                            </span>
+                          )}
+
+                          {/* Badge Metodo di Pagamento */}
                           {it.metodo_pagamento && (
-                            <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full border shadow-2xs whitespace-nowrap ${
-                              it.metodo_pagamento === 'Satispay'
-                                ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-300 dark:border-red-800/60'
-                                : it.metodo_pagamento === 'PayPal'
-                                ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60'
-                                : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60'
-                            }`}>
-                              {it.metodo_pagamento === 'Satispay' ? '🔴 Satispay' : it.metodo_pagamento === 'PayPal' ? '🅿️ PayPal' : '💵 Contanti'}
+                            <span
+                              style={{ padding: '3px 8px', fontSize: '11px', borderRadius: '8px' }}
+                              className={`font-bold whitespace-nowrap border ${
+                                it.metodo_pagamento === 'PayPal'
+                                  ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60'
+                                  : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60'
+                              }`}
+                            >
+                              {it.metodo_pagamento === 'PayPal' ? '🅿️ PayPal' : '💵 Contanti'}
                             </span>
                           )}
+
+                          {/* Badge Risparmio */}
                           {it.risparmio > 0 && (
-                            <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-200 dark:border-emerald-800 whitespace-nowrap">
-                              Risparmiati: +{it.risparmio.toFixed(2)}€
+                            <span
+                              style={{ padding: '3px 8px', fontSize: '11px', borderRadius: '8px' }}
+                              className="font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-200 dark:border-emerald-800 whitespace-nowrap"
+                            >
+                              Risparmio: +{it.risparmio.toFixed(2)}€
                             </span>
                           )}
+
+                          {/* Badge Offerta / Convenzione */}
                           {it.is_offerta_sito ? (
-                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-950/50 dark:text-amber-200 dark:border-amber-800 whitespace-nowrap">
+                            <span
+                              style={{ padding: '3px 8px', fontSize: '11px', borderRadius: '8px' }}
+                              className="font-bold bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-950/50 dark:text-amber-200 dark:border-amber-800 whitespace-nowrap"
+                            >
                               Offerta
                             </span>
                           ) : it.discount_badge && !it.risparmio && (
-                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-950/50 dark:text-blue-200 dark:border-blue-800 whitespace-nowrap">
+                            <span
+                              style={{ padding: '3px 8px', fontSize: '11px', borderRadius: '8px' }}
+                              className="font-bold bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-950/50 dark:text-blue-200 dark:border-blue-800 whitespace-nowrap"
+                            >
                               {it.discount_badge}
                             </span>
                           )}

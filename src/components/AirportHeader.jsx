@@ -31,23 +31,48 @@ export function AirportHeader({
       className="w-full transition-colors duration-300 bg-[#f9fafb]/85 dark:bg-[#0f172a]/85 border-b border-white/40 dark:border-white/10 shadow-xs px-3 sm:px-4 py-2 md:py-2.5 flex flex-col items-center justify-center"
     >
       {/* =========================================================================
-          1. HEADER ESCLUSIVO MOBILE (< 768px): SINGOLA RIGA PULITA E COMPATTA
+          1. HEADER ESCLUSIVO MOBILE (< 768px): SINGOLA RIGA COMPATTA
           - Logo/titolo "JustPlayPort" a sinistra
-          - I 2 pulsanti "DB" e "Dark Mode" a destra
-          - Tutti gli elementi secondari, menu e contatori nascosti su smartphone
+          - A destra: 3 pulsanti compatti (Manuali, DB, Dark Mode) con gap: 8px
+          - Nascosto qualsiasi altro elemento, filtro o sottotitolo
          ========================================================================= */}
-      <div className="flex md:hidden items-center justify-between w-full px-1">
-        {/* 1. Titolo "JustPlayPort" allineato a sinistra */}
-        <div className="flex items-center gap-1.5 font-bold text-lg tracking-tight text-slate-900 dark:text-white">
-          <span>JustPlayPort</span>
-          <span className="text-base">✈️</span>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '10px 16px',
+          width: '100%',
+        }}
+        className="flex md:hidden"
+      >
+        {/* A sinistra: Logo/titolo "JustPlayPort" bilanciato */}
+        <div className="flex items-center gap-1.5 font-bold text-base sm:text-lg tracking-tight text-slate-900 dark:text-white shrink-0 min-w-0">
+          <span className="truncate">JustPlayPort</span>
+          <span className="text-sm select-none">✈️</span>
         </div>
 
-        {/* 2. I 2 pulsanti "DB" e "Dark Mode" allineati a destra */}
-        <div className="flex items-center gap-2 shrink-0">
-          {/* Badge DB (Stato Connessione) */}
+        {/* A destra: 3 pulsanti compatti (Manuali, DB, Dark Mode) raggruppati con gap: 8px */}
+        <div
+          style={{ gap: '8px' }}
+          className="flex items-center shrink-0"
+        >
+          {/* 1. Pulsante Manuali */}
+          <a
+            href="https://boardrulesit.netlify.app/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/80 dark:bg-white/10 text-slate-800 dark:text-slate-100 border border-slate-200/80 dark:border-white/10 shadow-2xs active:scale-95 transition-all cursor-pointer"
+            title="Consulta i Manuali e Regolamenti"
+            aria-label="Manuali"
+          >
+            <BookOpen className="w-3.5 h-3.5 text-blue-600 dark:text-cyan-400 shrink-0" />
+            <span className="text-[11px] font-bold">Manuali</span>
+          </a>
+
+          {/* 2. Badge DB (Stato Connessione Database) */}
           <div
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono-code font-bold border shadow-xs transition-colors shrink-0 ${
+            className={`flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-mono-code font-bold border shadow-2xs transition-colors shrink-0 ${
               dbStatus.online
                 ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-400/30'
                 : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-400/30'
@@ -58,18 +83,18 @@ export function AirportHeader({
             <span>{dbStatus.online ? 'DB 🟢' : 'DB 🔴'}</span>
           </div>
 
-          {/* Toggle Dark Mode */}
+          {/* 3. Pulsante Dark Mode (Toggle Tema) */}
           <button
             type="button"
             onClick={onToggleNightMode}
             aria-label={isNightMode ? 'Passa alla modalità diurna' : 'Attiva la modalità notturna'}
-            className="flex items-center justify-center w-8 h-8 rounded-full bg-white dark:bg-white/10 border border-gray-200/80 dark:border-white/10 shadow-xs hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 active:scale-95 cursor-pointer shrink-0"
+            className="flex items-center justify-center w-7 h-7 rounded-full bg-white/80 dark:bg-white/10 border border-slate-200/80 dark:border-white/10 shadow-2xs active:scale-95 transition-all cursor-pointer shrink-0"
             title={isNightMode ? 'Passa alla modalità diurna' : 'Attiva la modalità notturna'}
           >
             {isNightMode ? (
-              <Moon className="w-4 h-4 text-amber-400 fill-amber-400/20" />
+              <Moon className="w-3.5 h-3.5 text-amber-400 fill-amber-400/20" />
             ) : (
-              <Sun className="w-4 h-4 text-amber-500" />
+              <Sun className="w-3.5 h-3.5 text-amber-500" />
             )}
           </button>
         </div>

@@ -236,8 +236,17 @@ function LiquidGlassGateCard({ shop, items = [], onClick, isNightMode = false })
       </div>
 
       {/* 2. CORPO DELLA CARD: Nome del negozio al centro e dettagli compatti */}
-      <div className="px-3 py-2 sm:px-4 sm:py-2.5 flex flex-col items-center text-center space-y-0.5">
-        <h3 className="text-sm sm:text-base font-bold tracking-tight text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-cyan-300 transition-colors truncate w-full">
+      <div className="px-3 py-2 sm:px-4 sm:py-2.5 flex flex-col items-center text-center space-y-0.5 min-w-0">
+        <h3
+          style={{
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            overflow: 'hidden',
+            lineHeight: 1.25,
+          }}
+          className="text-xs sm:text-base font-bold tracking-tight text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-cyan-300 transition-colors w-full break-words"
+        >
           {shop.name}
         </h3>
 
@@ -254,9 +263,15 @@ function LiquidGlassGateCard({ shop, items = [], onClick, isNightMode = false })
 
       {/* 3. FOOTER APPLE STYLE COMPATTO: Pill Totale centrata ed elegante */}
       <div className="px-3 py-2 sm:px-4 sm:py-2.5 border-t border-slate-200/60 dark:border-white/5 flex items-center justify-center bg-white/30 dark:bg-white/[0.02]">
-        {/* Pill Totale Gate */}
-        <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300/70 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-400/30 shadow-2xs backdrop-blur-md">
-          <span className="font-mono-code text-xs sm:text-sm font-black text-emerald-950 dark:text-white">
+        {/* Pill Totale Gate con tabular-nums e no-wrap */}
+        <div
+          style={{ padding: '3px 10px', borderRadius: '12px' }}
+          className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-900 border border-emerald-300/70 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-400/30 shadow-2xs backdrop-blur-md"
+        >
+          <span
+            style={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}
+            className="font-mono-code text-xs sm:text-sm font-black text-emerald-950 dark:text-white"
+          >
             {subtotal.toFixed(2)} €
           </span>
         </div>
