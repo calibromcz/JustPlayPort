@@ -3,9 +3,7 @@ import {
   X,
   Package,
   Calendar,
-  Plus,
   Trash2,
-  CheckCircle2,
   Store,
   User,
   Euro,
@@ -18,7 +16,6 @@ export function HangarPrevenditeModal({
   isOpen,
   onClose,
   prevendite = [],
-  onAddPrevendita,
   onRemovePrevendita,
   onUpdatePrevendita,
   onSpostaNelGate,
@@ -26,26 +23,8 @@ export function HangarPrevenditeModal({
   savedPassengerName = '',
   isNightMode = false,
 }) {
-  const [nomePasseggero, setNomePasseggero] = useState(savedPassengerName || '')
-  const [nomeGioco, setNomeGioco] = useState('')
-  const [url, setUrl] = useState('')
-  const [dataUscita, setDataUscita] = useState('')
-  const [idNegozio, setIdNegozio] = useState(shops[0]?.id || '')
-  const [prezzo, setPrezzo] = useState('')
   const [editingItemId, setEditingItemId] = useState(null)
   const [editFields, setEditFields] = useState({ id_negozio: '', prezzo: '', data_uscita: '' })
-
-  useEffect(() => {
-    if (savedPassengerName && !nomePasseggero) {
-      setNomePasseggero(savedPassengerName)
-    }
-  }, [savedPassengerName])
-
-  useEffect(() => {
-    if (shops.length > 0 && !idNegozio) {
-      setIdNegozio(shops[0].id)
-    }
-  }, [shops, idNegozio])
 
   // Blocco scroll del body quando la modale è aperta
   useEffect(() => {
@@ -71,35 +50,6 @@ export function HangarPrevenditeModal({
   }, [isOpen, onClose])
 
   if (!isOpen) return null
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    const p = parseFloat(prezzo.toString().replace(',', '.'))
-    if (!nomeGioco.trim() || isNaN(p) || p <= 0) {
-      alert('Inserisci il nome del gioco e un prezzo valido maggiore di 0€')
-      return
-    }
-
-    const nuovaPrevendita = {
-      id: `prev_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-      nome_utente: nomePasseggero.trim() || 'Passeggero',
-      nome_gioco: nomeGioco.trim(),
-      url: url.trim() || '',
-      data_uscita: dataUscita || new Date().toISOString().split('T')[0],
-      id_negozio: idNegozio || shops[0]?.id || 'playbazar',
-      prezzo: p,
-      created_at: new Date().toISOString(),
-    }
-
-    if (onAddPrevendita) {
-      onAddPrevendita(nuovaPrevendita)
-    }
-
-    setNomeGioco('')
-    setUrl('')
-    setPrezzo('')
-    setDataUscita('')
-  }
 
   const getShopName = (shopId) => {
     const s = shops.find((sh) => sh.id === shopId)
@@ -169,121 +119,9 @@ export function HangarPrevenditeModal({
           </button>
         </div>
 
-        {/* CONTENUTO SCORREVOLE COMPATTO: spaziature verticali ridotte a 8-10px */}
+        {/* CONTENUTO SCORREVOLE COMPATTO: solo visualizzazione delle prevendite */}
         <div className="flex-1 overflow-y-auto p-3 sm:p-5 pb-20 sm:pb-16 space-y-2.5 sm:space-y-3.5">
-          {/* 1. FORM AGGIUNTA PREVENDITA */}
-          <form
-            onSubmit={handleSubmit}
-            className={`p-4 rounded-2xl border space-y-3 shadow-xs ${
-              isNightMode
-                ? 'bg-white/[0.03] border-white/10'
-                : 'bg-white/60 border-sky-100'
-            }`}
-          >
-            <div className="text-xs font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-              <Plus className="w-3.5 h-3.5 stroke-[3]" />
-              <span>Registra Nuova Prevendita</span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
-              <div>
-                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">
-                  Nome Passeggero
-                </label>
-                <input
-                  type="text"
-                  placeholder="Es. Marco"
-                  value={nomePasseggero}
-                  onChange={(e) => setNomePasseggero(e.target.value)}
-                  required
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white/90 dark:bg-white/5 text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/40"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">
-                  Nome Gioco
-                </label>
-                <input
-                  type="text"
-                  placeholder="Es. Slay the Spire"
-                  value={nomeGioco}
-                  onChange={(e) => setNomeGioco(e.target.value)}
-                  required
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white/90 dark:bg-white/5 text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/40"
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-1 mt-3">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Link del negozio (opzionale)
-              </label>
-              <input
-                type="url"
-                placeholder="https://..."
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                className="w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400/50"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
-              <div>
-                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">
-                  Data d'uscita
-                </label>
-                <input
-                  type="date"
-                  value={dataUscita}
-                  onChange={(e) => setDataUscita(e.target.value)}
-                  required
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white/90 dark:bg-white/5 text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/40"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">
-                  Negozio di destinazione
-                </label>
-                <select
-                  value={idNegozio}
-                  onChange={(e) => setIdNegozio(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white/90 dark:bg-white/5 text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/40"
-                >
-                  {shops.map((s) => (
-                    <option key={s.id} value={s.id} className="text-slate-900 bg-white">
-                      {s.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">
-                  Prezzo Stimato €
-                </label>
-                <input
-                  type="text"
-                  placeholder="Es. 49.90"
-                  value={prezzo}
-                  onChange={(e) => setPrezzo(e.target.value)}
-                  required
-                  className="w-full px-3 py-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white/90 dark:bg-white/5 text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-amber-500/40"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full py-2.5 px-4 rounded-xl font-black text-xs bg-amber-500 hover:bg-amber-600 active:scale-[0.98] text-white shadow-sm flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-            >
-              <Package className="w-4 h-4 stroke-[2.5]" />
-              <span>Aggiungi all'Hangar Prevendite</span>
-            </button>
-          </form>
-
-          {/* 2. LISTA DELLE PREVENDITE IN ATTESA */}
+          {/* LISTA DELLE PREVENDITE IN ATTESA */}
           <div className="space-y-2.5">
             <div className="flex items-center justify-between text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
               <span className="flex items-center gap-1.5">
@@ -296,8 +134,12 @@ export function HangarPrevenditeModal({
             </div>
 
             {prevendite.length === 0 ? (
-              <div className="py-8 text-center text-xs text-slate-400 dark:text-slate-500 border border-dashed border-gray-200 dark:border-white/10 rounded-2xl">
-                Nessuna prevendita registrata. Usa il form sopra per aggiungere un titolo futuro!
+              <div className="py-12 text-center text-xs text-slate-400 dark:text-slate-500 border border-dashed border-gray-200 dark:border-white/10 rounded-2xl flex flex-col items-center justify-center gap-2">
+                <Package className="w-8 h-8 stroke-[1.5] text-slate-300 dark:text-slate-600" />
+                <p className="font-semibold text-slate-600 dark:text-slate-300">Nessuna prevendita registrata nell'Hangar.</p>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                  Usa il tasto centrale <span className="font-bold text-amber-500">+</span> in basso per imbarcare nuovi giochi o registrare prevendite!
+                </p>
               </div>
             ) : (
               <div className="space-y-2">
