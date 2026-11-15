@@ -128,26 +128,31 @@ export function FlightHistoryModal({
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            {/* Tasto compatto "Svuota" in stile distruttivo elegante Liquid Glass */}
-            {onClearHistory && flights && flights.length > 0 && (
+            {/* Tasto compatto "Svuota" in stile distruttivo elegante Liquid Glass (Visibile sia Mobile che Desktop) */}
+            {onClearHistory && (
               <button
                 type="button"
                 onClick={() => setShowConfirmModal(true)}
+                disabled={!flights || flights.length === 0}
                 style={{
-                  backgroundColor: 'rgba(239, 68, 68, 0.12)',
-                  color: '#ef4444',
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  backgroundColor: (!flights || flights.length === 0) ? 'rgba(148, 163, 184, 0.1)' : 'rgba(239, 68, 68, 0.15)',
+                  color: (!flights || flights.length === 0) ? '#94a3b8' : '#ef4444',
+                  border: (!flights || flights.length === 0) ? '1px solid rgba(148, 163, 184, 0.2)' : '1px solid rgba(239, 68, 68, 0.4)',
                   borderRadius: '10px',
-                  padding: '6px 12px',
-                  fontSize: '13px',
+                  padding: '6px 10px',
+                  fontSize: '12px',
                   fontWeight: 600,
                 }}
-                className="hover:bg-rose-500/20 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+                className={`transition-all flex items-center gap-1.5 shrink-0 shadow-xs ${
+                  (!flights || flights.length === 0)
+                    ? 'opacity-40 cursor-not-allowed'
+                    : 'hover:bg-rose-500/25 active:scale-95 cursor-pointer'
+                }`}
                 title="Svuota completamente il Registro di Volo"
                 aria-label="Svuota Registro"
               >
-                <Trash2 className="w-3.5 h-3.5 stroke-[2.2]" />
-                <span>🗑️ Svuota</span>
+                <Trash2 className="w-3.5 h-3.5 stroke-[2.2] shrink-0" />
+                <span className="whitespace-nowrap font-bold">🗑️ Svuota</span>
               </button>
             )}
 

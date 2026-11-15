@@ -786,6 +786,7 @@ export function App() {
             id_negozio: h.negozio_scelto || 'playbazar',
             prezzo: parseFloat(h.prezzo_listino) || 0,
             created_at: h.data_inserimento || new Date().toISOString(),
+            data_uscita: h.data_inserimento || null,
           }))
           setPrevendite(normalizedHangar)
         }
