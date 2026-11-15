@@ -34,9 +34,9 @@ export async function exportGateExcel(shop, items = [], orderRef = null, orderDa
   const groupedMap = new Map()
 
   items.forEach((it) => {
-    const title = (it.nome_gioco || it.title || 'Gioco').trim()
-    const passenger = (it.nome_utente || it.passenger || 'Socio').trim()
-    const payment = (it.metodo_pagamento || it.paymentMethod || 'Contanti').trim()
+    const title = (it.nome_gioco || it.title || it.gioco || 'Gioco').trim()
+    const passenger = (it.nome_utente || it.passenger || it.utente || it.nome || 'Socio').trim()
+    const payment = (it.metodo_pagamento || it.paymentMethod || it.pagamento || 'Contanti').trim()
     const url = (it.url || it.link || '').trim()
 
     const rawFinalPrice =
@@ -47,8 +47,10 @@ export async function exportGateExcel(shop, items = [], orderRef = null, orderDa
         : parseFloat(it.prezzo || it.price) || 0
 
     const listPriceUnit =
-      it.prezzo_listino_unitario !== undefined
+      it.prezzo_listino_unitario !== undefined && it.prezzo_listino_unitario !== null
         ? Number(it.prezzo_listino_unitario) || rawFinalPrice
+        : it.prezzo_listino !== undefined && it.prezzo_listino !== null
+        ? Number(it.prezzo_listino) || rawFinalPrice
         : it.prezzo_listino_totale !== undefined && (it.quantita || 1) > 0
         ? Number(it.prezzo_listino_totale) / (it.quantita || 1)
         : rawFinalPrice
@@ -65,7 +67,7 @@ export async function exportGateExcel(shop, items = [], orderRef = null, orderDa
       const discountPct = Math.round(((listPriceTot - finalPriceTot) / listPriceTot) * 100)
       discountLabel = `-${discountPct}%`
     } else if (it.is_offerta_sito) {
-      discountLabel = 'Offerta sito'
+      discountLabel = 'Offerta'
     } else if (shop?.discount && typeof shop.discount === 'string' && !isDragonstore) {
       discountLabel = shop.discount
     }
@@ -92,38 +94,25 @@ export async function exportGateExcel(shop, items = [], orderRef = null, orderDa
     }
   })
 
-  // Genera righe di dati conformi alle 8 colonne richieste:
-  // 1. Socio
-  // 2. Gioco
-  // 3. Quantità
-  // 4. Prezzo di Listino (€)
-  // 5. Sconto Applicato
-  // 6. Prezzo Finale (€)
-  // 7. Metodo di Pagamento
-  // 8. Link / Note
-  const seenPassengers = new Set()
+  // Genera righe di dati conformi alle chiavi esatte richieste:
+  // 1. "Socio"
+  // 2. "Gioco"
+  // 3. "Quantità"
+  // 4. "Prezzo di Listino (€)"
+  // 5. "Sconto"
+  // 6. "Prezzo Finale (€)"
+  // 7. "Pagamento"
   const rows = []
 
   groupedMap.forEach((item) => {
-    let noteQuota = item.url || ''
-    if (isForced && quotaPerPassenger > 0) {
-      const pKey = item.passenger.toLowerCase().trim()
-      if (!seenPassengers.has(pKey)) {
-        seenPassengers.add(pKey)
-        const quotaStr = `Quota sped. € ${quotaPerPassenger.toFixed(2).replace('.', ',')}`
-        noteQuota = noteQuota ? `${noteQuota} (${quotaStr})` : quotaStr
-      }
-    }
-
     rows.push({
       'Socio': item.passenger || 'Socio',
       'Gioco': item.title || 'Gioco',
       'Quantità': item.quantity || 1,
       'Prezzo di Listino (€)': Number(item.totalListPrice.toFixed(2)),
-      'Sconto Applicato': item.discountLabel || '0%',
+      'Sconto': item.discountLabel || '0%',
       'Prezzo Finale (€)': Number(item.totalPrice.toFixed(2)),
-      'Metodo di Pagamento': item.payment || 'Contanti',
-      'Link / Note': noteQuota || '-',
+      'Pagamento': item.payment || 'Contanti',
     })
   })
 
@@ -137,26 +126,24 @@ export async function exportGateExcel(shop, items = [], orderRef = null, orderDa
     'Gioco': `${rows.length} articoli`,
     'Quantità': totalQtyAll,
     'Prezzo di Listino (€)': Number(totalListAll.toFixed(2)),
-    'Sconto Applicato': '',
+    'Sconto': '',
     'Prezzo Finale (€)': Number(totalFinalAll.toFixed(2)),
-    'Metodo di Pagamento': isForced ? `+ Sped. € ${Number(shippingInfo?.shippingCost || 0).toFixed(2)}` : 'Sped. Gratuita',
-    'Link / Note': refStr ? `Rif: ${refStr}` : '',
+    'Pagamento': isForced ? `+ Sped. € ${Number(shippingInfo?.shippingCost || 0).toFixed(2)}` : 'Spedizione Gratuita',
   })
 
   try {
-    // Crea Foglio con XLSX nativo
+    // Crea Foglio con XLSX nativo json_to_sheet senza celle unite
     const ws = XLSX.utils.json_to_sheet(rows)
 
-    // Larghezza esplicita delle colonne per compatibilità perfetta su Apple Numbers ed Excel
+    // Larghezza esplicita delle 7 colonne richieste
     ws['!cols'] = [
-      { wch: 22 }, // Socio
-      { wch: 32 }, // Gioco
+      { wch: 24 }, // Socio
+      { wch: 35 }, // Gioco
       { wch: 10 }, // Quantità
-      { wch: 18 }, // Prezzo di Listino (€)
-      { wch: 16 }, // Sconto Applicato
-      { wch: 18 }, // Prezzo Finale (€)
-      { wch: 18 }, // Metodo di Pagamento
-      { wch: 35 }, // Link / Note
+      { wch: 20 }, // Prezzo di Listino (€)
+      { wch: 14 }, // Sconto
+      { wch: 20 }, // Prezzo Finale (€)
+      { wch: 18 }, // Pagamento
     ]
 
     const wb = XLSX.utils.book_new()
@@ -175,16 +162,15 @@ export async function exportGateExcel(shop, items = [], orderRef = null, orderDa
       const wb = XLSX.utils.book_new()
       const ws = XLSX.utils.json_to_sheet(rows)
       ws['!cols'] = [
-        { wch: 22 },
-        { wch: 32 },
-        { wch: 10 },
-        { wch: 18 },
-        { wch: 16 },
-        { wch: 18 },
-        { wch: 18 },
-        { wch: 35 },
+        { wch: 24 }, // Socio
+        { wch: 35 }, // Gioco
+        { wch: 10 }, // Quantità
+        { wch: 20 }, // Prezzo di Listino (€)
+        { wch: 14 }, // Sconto
+        { wch: 20 }, // Prezzo Finale (€)
+        { wch: 18 }, // Pagamento
       ]
-      XLSX.utils.book_append_sheet(wb, ws, 'Ordine')
+      XLSX.utils.book_append_sheet(wb, ws, safeSheetName)
       const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
       const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
       const safeShopNameFile = (shop?.name || 'Negozio').replace(/[^a-zA-Z0-9]/g, '_')
