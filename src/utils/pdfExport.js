@@ -50,7 +50,7 @@ export function incrementShopOrderReference(shopId) {
  * Raggruppa i giochi identici per Titolo + Passeggero + Metodo di Pagamento,
  * sommando le quantità e i prezzi. Supporta sia le proprietà italiane che inglesi.
  */
-export function groupGateItems(items = []) {
+export function groupGateItems(items = [], shop = null) {
   const groups = new Map()
 
   items.forEach((item) => {
@@ -64,23 +64,50 @@ export function groupGateItems(items = []) {
         : typeof item.price === 'number'
         ? item.price
         : parseFloat(item.prezzo || item.price) || 0
-    const qty = item.quantita || item.quantity || 1
+    const qty = Number(item.quantita || item.quantity || 1) || 1
+
+    const listPriceUnit =
+      item.prezzo_listino_unitario !== undefined
+        ? Number(item.prezzo_listino_unitario) || rawPrice
+        : item.prezzo_listino_totale !== undefined && qty > 0
+        ? Number(item.prezzo_listino_totale) / qty
+        : rawPrice
+
+    const listPriceTot = Number((listPriceUnit * qty).toFixed(2))
+    const finalPriceTot = Number((rawPrice * qty).toFixed(2))
+
+    // Calcolo sconto applicato
+    let discountLabel = '0%'
+    if (item.discount_badge) {
+      discountLabel = item.discount_badge
+    } else if (listPriceTot > finalPriceTot && listPriceTot > 0) {
+      const discountPct = Math.round(((listPriceTot - finalPriceTot) / listPriceTot) * 100)
+      discountLabel = `-${discountPct}%`
+    } else if (item.is_offerta_sito) {
+      discountLabel = 'Offerta'
+    } else if (shop?.discount && typeof shop.discount === 'string') {
+      discountLabel = shop.discount
+    }
 
     const key = `${title.toLowerCase()}___${passenger.toLowerCase()}___${payment.toLowerCase()}___${url.toLowerCase()}`
 
     if (groups.has(key)) {
       const existing = groups.get(key)
       existing.quantity += qty
-      existing.totalPrice += rawPrice * qty
+      existing.totalPrice += finalPriceTot
+      existing.totalListPrice += listPriceTot
     } else {
       groups.set(key, {
         title,
         passenger,
         payment,
         url,
+        unitListPrice: listPriceUnit,
+        totalListPrice: listPriceTot,
+        discountLabel,
         unitPrice: rawPrice,
         quantity: qty,
-        totalPrice: rawPrice * qty,
+        totalPrice: finalPriceTot,
       })
     }
   })
@@ -200,17 +227,18 @@ export function exportGatePdf(shop, items = [], customOrderRef = null, customDat
   )
 
   // 3. TABELLA ORDINI
-  const groupedItems = groupGateItems(items)
+  const groupedItems = groupGateItems(items, shop)
 
   const tableHead = isForced
     ? [
         [
           { content: 'Q.tà', styles: { halign: 'center' } },
           { content: 'Titolo Gioco', styles: { halign: 'left' } },
-          { content: 'Link Store', styles: { halign: 'center' } },
           { content: 'Passeggero (Socio)', styles: { halign: 'left' } },
-          { content: 'Metodo Pagamento', styles: { halign: 'left' } },
-          { content: 'Prezzo', styles: { halign: 'right' } },
+          { content: 'Metodo', styles: { halign: 'left' } },
+          { content: 'Listino', styles: { halign: 'right' } },
+          { content: 'Sconto', styles: { halign: 'center' } },
+          { content: 'Netto', styles: { halign: 'right' } },
           { content: 'Quota Sped.', styles: { halign: 'right' } },
           { content: 'Totale', styles: { halign: 'right' } },
         ],
@@ -219,16 +247,16 @@ export function exportGatePdf(shop, items = [], customOrderRef = null, customDat
         [
           { content: 'Q.tà', styles: { halign: 'center' } },
           { content: 'Titolo Gioco', styles: { halign: 'left' } },
-          { content: 'Link Store', styles: { halign: 'center' } },
           { content: 'Passeggero (Socio)', styles: { halign: 'left' } },
           { content: 'Metodo Pagamento', styles: { halign: 'left' } },
-          { content: 'Prezzo', styles: { halign: 'right' } },
+          { content: 'Prezzo Listino', styles: { halign: 'right' } },
+          { content: 'Sconto %', styles: { halign: 'center' } },
+          { content: 'Prezzo Finale', styles: { halign: 'right' } },
         ],
       ]
 
   const seenPassengers = new Set()
   const tableBody = groupedItems.map((item) => {
-    const linkDisplay = item.url ? 'Apri Link' : '-'
     if (isForced) {
       const passengerNorm = item.passenger.toLowerCase().trim()
       let quotaForRow = 0
@@ -241,9 +269,10 @@ export function exportGatePdf(shop, items = [], customOrderRef = null, customDat
       return [
         `${item.quantity}`,
         item.title,
-        linkDisplay,
         item.passenger,
         item.payment,
+        formatEuro(item.totalListPrice),
+        item.discountLabel || '0%',
         formatEuro(item.totalPrice),
         quotaForRow > 0 ? formatEuro(quotaForRow) : '€ 0.00',
         formatEuro(rowTotal),
@@ -253,9 +282,10 @@ export function exportGatePdf(shop, items = [], customOrderRef = null, customDat
     return [
       `${item.quantity}`,
       item.title,
-      linkDisplay,
       item.passenger,
       item.payment,
+      formatEuro(item.totalListPrice),
+      item.discountLabel || '0%',
       formatEuro(item.totalPrice),
     ]
   })
@@ -277,52 +307,42 @@ export function exportGatePdf(shop, items = [], customOrderRef = null, customDat
       fillColor: [241, 245, 249], // grigio chiaro #f1f5f9
       textColor: [30, 41, 59], // testo scuro #1e293b
       fontStyle: 'bold',
-      fontSize: 9,
+      fontSize: 8.5,
       cellPadding: 3.5,
       lineWidth: { bottom: 0.6 },
       lineColor: [203, 213, 225], // border #cbd5e1
     },
     bodyStyles: {
       textColor: [15, 23, 42], // testo scuro
-      fontSize: 8.5,
-      cellPadding: 3,
+      fontSize: 8,
+      cellPadding: 2.8,
       lineWidth: { bottom: 0.3 },
       lineColor: [226, 232, 240], // #e2e8f0 bordo inferiore sottile tra le righe
     },
     columnStyles: isForced
       ? {
-          0: { cellWidth: 12, halign: 'center', fontStyle: 'bold' }, // Q.tà
+          0: { cellWidth: 10, halign: 'center', fontStyle: 'bold' }, // Q.tà
           1: { cellWidth: 'auto', fontStyle: 'bold' }, // Titolo Gioco
-          2: { cellWidth: 20, halign: 'center' }, // Link Store
-          3: { cellWidth: 32 }, // Passeggero (Socio)
-          4: { cellWidth: 28 }, // Metodo Pagamento
-          5: { cellWidth: 20, halign: 'right' }, // Prezzo
-          6: { cellWidth: 20, halign: 'right', fontStyle: 'bold' }, // Quota Sped.
-          7: { cellWidth: 22, halign: 'right', fontStyle: 'bold' }, // Totale
+          2: { cellWidth: 28 }, // Passeggero (Socio)
+          3: { cellWidth: 20 }, // Metodo
+          4: { cellWidth: 18, halign: 'right' }, // Listino
+          5: { cellWidth: 16, halign: 'center' }, // Sconto
+          6: { cellWidth: 18, halign: 'right' }, // Netto
+          7: { cellWidth: 18, halign: 'right', fontStyle: 'bold' }, // Quota Sped.
+          8: { cellWidth: 20, halign: 'right', fontStyle: 'bold' }, // Totale
         }
       : {
-          0: { cellWidth: 14, halign: 'center', fontStyle: 'bold' }, // Q.tà
+          0: { cellWidth: 12, halign: 'center', fontStyle: 'bold' }, // Q.tà
           1: { cellWidth: 'auto', fontStyle: 'bold' }, // Titolo Gioco
-          2: { cellWidth: 22, halign: 'center' }, // Link Store
-          3: { cellWidth: 38 }, // Passeggero (Socio)
-          4: { cellWidth: 34 }, // Metodo Pagamento
-          5: { cellWidth: 24, halign: 'right', fontStyle: 'bold' }, // Prezzo
+          2: { cellWidth: 32 }, // Passeggero (Socio)
+          3: { cellWidth: 26 }, // Metodo Pagamento
+          4: { cellWidth: 24, halign: 'right' }, // Prezzo Listino
+          5: { cellWidth: 20, halign: 'center' }, // Sconto %
+          6: { cellWidth: 24, halign: 'right', fontStyle: 'bold' }, // Prezzo Finale
         },
     didDrawCell: (data) => {
-      // Disegna il link cliccabile nella colonna Link Store (indice 2)
-      if (data.section === 'body' && data.column.index === 2) {
-        const item = groupedItems[data.row.index]
-        if (item && item.url) {
-          doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, {
-            url: item.url,
-          })
-          // Stile testo azzurro sottolineato per hyperlink
-          doc.setTextColor(2, 132, 199) // Sky-600
-        }
-      }
-
-      // Disegna un bullet elegante colorato prima del testo del metodo di pagamento (colonna indice 4)
-      if (data.section === 'body' && data.column.index === 4) {
+      // Disegna un bullet elegante colorato prima del testo del metodo di pagamento (colonna indice 3)
+      if (data.section === 'body' && data.column.index === 3) {
         const rawText = (data.cell.raw || '').toString().toLowerCase()
         let rgb = [100, 116, 139] // default slate
         if (rawText.includes('satispay')) rgb = paymentColorMap.satispay
@@ -332,19 +352,12 @@ export function exportGatePdf(shop, items = [], customOrderRef = null, customDat
         const circleX = data.cell.x + 3
         const circleY = data.cell.y + data.cell.height / 2
         doc.setFillColor(rgb[0], rgb[1], rgb[2])
-        doc.circle(circleX, circleY, 1.4, 'F')
+        doc.circle(circleX, circleY, 1.2, 'F')
       }
     },
     willDrawCell: (data) => {
-      if (data.section === 'body' && data.column.index === 2) {
-        const item = groupedItems[data.row.index]
-        if (item && item.url) {
-          data.cell.styles.textColor = [2, 132, 199]
-          data.cell.styles.fontStyle = 'bold'
-        }
-      }
-      if (data.section === 'body' && data.column.index === 4) {
-        data.cell.styles.cellPadding = { top: 3.5, right: 3, bottom: 3.5, left: 6.5 }
+      if (data.section === 'body' && data.column.index === 3) {
+        data.cell.styles.cellPadding = { top: 3, right: 3, bottom: 3, left: 6 }
       }
     },
   })

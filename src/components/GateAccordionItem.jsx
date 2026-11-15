@@ -353,14 +353,12 @@ export function GateAccordionItem({
     }, 600)
   }
 
-  // REQUISITO 2 & 3 - AZIONE 1: "📄 Scarica come PDF" (Chiede conferma, genera PDF e azzera/chiude il Gate)
+  const [hasDownloadedDistinta, setHasDownloadedDistinta] = useState(false)
+
+  // REQUISITO 4: "📄 Scarica come PDF" (Scarica il PDF SENZA chiudere/azzerare il Gate)
   const handleDownloadPdf = () => {
     if (effectiveItems.length === 0) {
       alert('Nessun gioco imbarcato in questo Gate da esportare.')
-      return
-    }
-
-    if (!window.confirm("Vuoi scaricare la distinta e chiudere/azzerare il Gate? Tutti i bagagli attuali verranno rimossi dal Gate.")) {
       return
     }
 
@@ -379,34 +377,20 @@ export function GateAccordionItem({
         quotaPerPassenger: shippingPerPassenger,
       }
       exportGatePdf(shop, effectiveItems, currentOrderRef, orderDate, shippingInfo)
-      setFeedbackMessage(`📄 ${currentOrderRef} scaricato! Volo archiviato nel Registro.`)
+      setHasDownloadedDistinta(true)
+      setFeedbackMessage(`📄 ${currentOrderRef} scaricato con successo!`)
       setTimeout(() => setFeedbackMessage(''), 3500)
       setIsDistintaDropdownOpen(false)
-
-      // c) IMMEDIATAMENTE DOPO: sposta nel "Registro di Volo" (archiviazione)
-      // d) Svuota il Gate attuale, riportandolo a 0€ su Supabase e localmente
-      if (onArchiveFlight) {
-        onArchiveFlight(shop, effectiveItems, currentOrderRef, orderDate)
-      } else {
-        if (isPronto && onShareStore) {
-          onShareStore(shop.id, effectiveItems)
-        }
-        onClearCart(shop.id)
-      }
     } catch (err) {
       console.error('Errore generazione PDF:', err)
       alert('Si è verificato un errore durante la generazione del PDF.')
     }
   }
 
-  // REQUISITO 2 & 3 - AZIONE 2: "📊 Crea Foglio Ordine (Google Sheets)" (Progressivo + Download + Archiviazione immediata + Reset Gate a 0€)
+  // REQUISITO 4: "📊 Crea Foglio Ordine (Google Sheets / Excel)" (Scarica il file SENZA chiudere/azzerare il Gate)
   const handleExportExcel = async () => {
     if (effectiveItems.length === 0) {
       alert('Nessun gioco imbarcato per questo Gate.')
-      return
-    }
-
-    if (!window.confirm("Vuoi scaricare la distinta e chiudere/azzerare il Gate? Tutti i bagagli attuali verranno rimossi dal Gate.")) {
       return
     }
 
@@ -426,25 +410,43 @@ export function GateAccordionItem({
       }
       const ok = await exportGateExcel(shop, effectiveItems, currentOrderRef, orderDate, shippingInfo)
       if (ok) {
-        setFeedbackMessage(`📊 Foglio Ordine (${currentOrderRef}) scaricato! Volo archiviato nel Registro.`)
+        setHasDownloadedDistinta(true)
+        setFeedbackMessage(`📊 Foglio Ordine (${currentOrderRef}) scaricato con successo!`)
         setTimeout(() => setFeedbackMessage(''), 3500)
         setIsDistintaDropdownOpen(false)
-
-        // c) IMMEDIATAMENTE DOPO: sposta nel "Registro di Volo" (archiviazione)
-        // d) Svuota il Gate attuale, riportandolo a 0€
-        if (onArchiveFlight) {
-          onArchiveFlight(shop, effectiveItems, currentOrderRef, orderDate)
-        } else {
-          if (isPronto && onShareStore) {
-            onShareStore(shop.id, effectiveItems)
-          }
-          onClearCart(shop.id)
-        }
       }
     } catch (err) {
       console.error('Errore generazione Foglio Ordine:', err)
       alert('Si è verificato un errore durante la generazione del foglio di calcolo.')
     }
+  }
+
+  // REQUISITO 4: Tasto "✅ Chiudi Ordine" (Chiede conferma, archivia nel Registro e svuota il Gate)
+  const handleCloseOrder = () => {
+    if (effectiveItems.length === 0) {
+      alert('Nessun gioco imbarcato in questo Gate.')
+      return
+    }
+
+    const isConfirmed = window.confirm("Sei sicuro di voler chiudere l'ordine?")
+    if (!isConfirmed) return
+
+    const currentOrderRef = onGetNextOrderNumber
+      ? onGetNextOrderNumber(shop.id)
+      : orderRef
+
+    setFeedbackMessage(`✅ Ordine ${currentOrderRef} chiuso e archiviato nel Registro di Volo!`)
+    setTimeout(() => setFeedbackMessage(''), 4000)
+
+    if (onArchiveFlight) {
+      onArchiveFlight(shop, effectiveItems, currentOrderRef, orderDate)
+    } else {
+      if (isPronto && onShareStore) {
+        onShareStore(shop.id, effectiveItems)
+      }
+      onClearCart(shop.id)
+    }
+    setHasDownloadedDistinta(false)
   }
 
   // REQUISITO 2 - AZIONE 3: "📋 Copia Testo del Riepilogo" (Copia con metadati e alert)
@@ -1351,6 +1353,19 @@ export function GateAccordionItem({
                     </button>
                   </div>
                 </div>
+
+                {/* REQUISITO 4: Pulsante ✅ Chiudi Ordine (Visibile quando la distinta è disponibile / pronta per essere chiusa) */}
+                {(hasDownloadedDistinta || isPronto) && effectiveItems.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleCloseOrder}
+                    className="w-full min-h-12 py-3 px-4 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 btn-aviation shadow-lg bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white cursor-pointer transition-all border border-emerald-500/80 animate-ticket-pop-in"
+                    title="Chiudi definitivamente l'ordine, archivialo nel Registro e azzera il Gate"
+                  >
+                    <span className="text-base leading-none">✅</span>
+                    <span>Chiudi Ordine</span>
+                  </button>
+                )}
               </div>
             ) : ordineForzato ? (
               /* QUANDO ORDINE È FORZATO (Sotto soglia o forzato dall'utente) */
@@ -1444,6 +1459,19 @@ export function GateAccordionItem({
                     <span>❌ Annulla Forza Ordine (€ {shippingCost.toFixed(2).replace('.', ',')})</span>
                   </button>
                 </div>
+
+                {/* REQUISITO 4: Pulsante ✅ Chiudi Ordine anche per ordine forzato */}
+                {(hasDownloadedDistinta || isPronto) && effectiveItems.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleCloseOrder}
+                    className="w-full min-h-12 py-3 px-4 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 btn-aviation shadow-lg bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white cursor-pointer transition-all border border-emerald-500/80 animate-ticket-pop-in"
+                    title="Chiudi definitivamente l'ordine, archivialo nel Registro e azzera il Gate"
+                  >
+                    <span className="text-base leading-none">✅</span>
+                    <span>Chiudi Ordine</span>
+                  </button>
+                )}
               </div>
             ) : (
               /* QUANDO SOTTO SOGLIA E NON ANCORA FORZATO: SOTTO LA LISTA I DUE PULSANTI */

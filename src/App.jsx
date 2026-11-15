@@ -1406,7 +1406,7 @@ export function App() {
       />
 
       {/* Contenitore Principale Terminal con padding-top compatto per non finire coperto dall'header fisso */}
-      <main className="relative z-10 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 pb-8 pt-[102px] sm:pt-[98px] flex-1 flex flex-col box-border">
+      <main className="relative z-10 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 pb-8 pt-[122px] sm:pt-[118px] flex-1 flex flex-col box-border">
         {/* REQUISITO: Modale Hangar Prevendite */}
         <HangarPrevenditeModal
           isOpen={isHangarOpen}
@@ -1427,7 +1427,6 @@ export function App() {
           onClose={() => setIsFlightHistoryOpen(false)}
           flights={flightHistory}
           onRemoveFlight={handleRemoveFlightFromHistory}
-          onClearHistory={handleClearHistory}
           savedPassengerName={savedPassengerName}
           isNightMode={isNightMode}
         />
