@@ -1470,6 +1470,7 @@ export function App() {
           onClose={() => setIsFlightHistoryOpen(false)}
           flights={flightHistory}
           onRemoveFlight={handleRemoveFlightFromHistory}
+          onClearHistory={handleClearHistory}
           savedPassengerName={savedPassengerName}
           isNightMode={isNightMode}
         />

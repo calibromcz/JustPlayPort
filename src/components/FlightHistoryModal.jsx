@@ -8,6 +8,7 @@ export function FlightHistoryModal({
   onClose,
   flights = [],
   onRemoveFlight,
+  onClearHistory,
   savedPassengerName = '',
   isNightMode = false,
 }) {
@@ -107,6 +108,20 @@ export function FlightHistoryModal({
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            {/* Tasto compatto "Svuota" */}
+            {onClearHistory && flights && flights.length > 0 && (
+              <button
+                type="button"
+                onClick={onClearHistory}
+                className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 hover:text-rose-200 border border-rose-500/30 flex items-center gap-1 transition-all active:scale-95 cursor-pointer shadow-xs"
+                title="Svuota completamente il Registro di Volo"
+                aria-label="Svuota registro"
+              >
+                <Trash2 className="w-3.5 h-3.5 stroke-[2.2]" />
+                <span>Svuota</span>
+              </button>
+            )}
+
             {/* Pulsante Chiusura (X) */}
             <button
               type="button"
