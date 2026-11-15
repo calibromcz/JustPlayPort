@@ -164,14 +164,16 @@ export function NewLuggageModal({
         style={{
           width: '100%',
         }}
-        className={`h-[100dvh] w-full sm:h-auto sm:max-h-[88vh] sm:max-w-lg overflow-y-auto flex flex-col animate-slide-up rounded-none sm:rounded-3xl border-0 sm:border shadow-2xl transition-all ${
+        className={`fixed inset-0 sm:relative sm:inset-auto w-full h-[100dvh] sm:h-auto sm:max-h-[88vh] sm:max-w-lg overflow-y-auto flex flex-col animate-slide-up rounded-none sm:rounded-3xl border-0 sm:border shadow-2xl transition-all ${
           isNightMode
             ? 'bg-[#18181b] text-white border-white/10 shadow-black/90'
             : 'bg-white text-slate-900 border-slate-200 shadow-slate-900/30'
         }`}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* HEADER APPLE LIQUID GLASS STICKY IN ALTO: Tasto "← Torna al Gate" a SX e "✕" a DX (min 44x44px) */}
+        {/* =========================================================================
+            REQUISITO 5: HEADER STICKY LIQUID GLASS IN ALTO (Tasto SX "← Torna al Gate" e DX "✕", min 44x44px)
+           ========================================================================= */}
         <div
           style={{
             position: 'sticky',
@@ -183,29 +185,31 @@ export function NewLuggageModal({
           }}
           className="flex items-center justify-between px-4 py-3 border-b border-slate-200/80 dark:border-white/10 shrink-0 gap-2"
         >
-          {/* Tasto Torna al Gate / Indietro (Target tocco min 44x44px) */}
+          {/* Tasto Torna al Gate / Indietro a sinistra (Target tocco min 44x44px) */}
           <button
             type="button"
             onClick={onClose}
             className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] min-w-[44px] rounded-full text-xs font-bold text-slate-700 dark:text-slate-200 bg-black/[0.05] dark:bg-white/10 hover:bg-black/[0.1] dark:hover:bg-white/20 active:scale-95 transition-all cursor-pointer shadow-2xs"
             aria-label="Torna al Gate"
+            title="Torna al Gate"
           >
             <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
             <span>← Torna al Gate</span>
           </button>
 
-          {/* Titolo centrato */}
+          {/* Titolo centrato: "Aggiungi al Gate" */}
           <div className="flex items-center gap-1.5 font-bold text-base tracking-tight truncate">
             <span>✈️</span>
-            <span className="truncate">Nuovo Bagaglio</span>
+            <span className="truncate">Aggiungi al Gate</span>
           </div>
 
-          {/* Tasto Chiudi '✕' (Target tocco min 44x44px) */}
+          {/* Tasto Chiudi '✕' a destra (Target tocco min 44x44px) */}
           <button
             type="button"
             onClick={onClose}
             className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center text-slate-700 dark:text-slate-200 bg-black/[0.05] dark:bg-white/10 hover:bg-black/[0.1] dark:hover:bg-white/20 active:scale-95 transition-all cursor-pointer shadow-2xs shrink-0"
             aria-label="Chiudi modale"
+            title="Chiudi"
           >
             <X className="w-4 h-4 stroke-[2.5]" />
           </button>

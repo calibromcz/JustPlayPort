@@ -1436,8 +1436,8 @@ export function App() {
         dbStatus={dbStatus}
       />
 
-      {/* Contenitore Principale Terminal con padding-top compatto e pb-[140px] per la Bottom Bar fluttuante */}
-      <main className="relative z-10 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 pb-[140px] sm:pb-[120px] pt-[140px] sm:pt-[134px] flex-1 flex flex-col box-border">
+      {/* Contenitore Principale Terminal con padding-top compatto su mobile (pt-[68px]) e desktop (md:pt-[140px]), e pb-[140px] per la Bottom Bar fluttuante e FAB */}
+      <main className="relative z-10 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 pb-[140px] sm:pb-[120px] pt-[68px] md:pt-[140px] flex-1 flex flex-col box-border">
         {/* REQUISITO: Modale Globale Imbarco Nuovo Bagaglio / Prevendita (+) */}
         <NewLuggageModal
           isOpen={isNewLuggageOpen}
@@ -1547,9 +1547,10 @@ export function App() {
         isNightMode={isNightMode}
       />
 
-      {/* REQUISITO: Floating Bottom Bar (iOS Liquid Glass Dock Bar) */}
+      {/* REQUISITO: Floating Bottom Bar (iOS Liquid Glass Dock Bar) e FAB "Aggiungi al Gate" */}
       <FloatingBottomBar
         hangarCount={prevendite.length}
+        onOpenGates={() => navigateToTab('gates')}
         onOpenHangar={() => navigateToTab('hangar')}
         onOpenPassport={() => navigateToTab('passport')}
         onOpenNewLuggage={() => navigateToTab('newLuggage')}
