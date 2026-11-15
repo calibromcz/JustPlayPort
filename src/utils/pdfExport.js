@@ -233,30 +233,37 @@ export function exportGatePdf(shop, items = [], customOrderRef = null, customDat
     ? [
         [
           { content: 'Q.tà', styles: { halign: 'center' } },
-          { content: 'Titolo Gioco', styles: { halign: 'left' } },
           { content: 'Passeggero (Socio)', styles: { halign: 'left' } },
+          { content: 'Titolo Gioco', styles: { halign: 'left' } },
+          { content: 'Link Store', styles: { halign: 'center' } },
+          { content: 'Prezzo Listino', styles: { halign: 'right' } },
+          { content: 'Sconto %', styles: { halign: 'center' } },
+          { content: 'Prezzo Scontato', styles: { halign: 'right' } },
           { content: 'Metodo', styles: { halign: 'left' } },
-          { content: 'Listino', styles: { halign: 'right' } },
-          { content: 'Sconto', styles: { halign: 'center' } },
-          { content: 'Netto', styles: { halign: 'right' } },
           { content: 'Quota Sped.', styles: { halign: 'right' } },
-          { content: 'Totale', styles: { halign: 'right' } },
+          { content: 'Totale Finale', styles: { halign: 'right' } },
         ],
       ]
     : [
         [
           { content: 'Q.tà', styles: { halign: 'center' } },
-          { content: 'Titolo Gioco', styles: { halign: 'left' } },
           { content: 'Passeggero (Socio)', styles: { halign: 'left' } },
-          { content: 'Metodo Pagamento', styles: { halign: 'left' } },
+          { content: 'Titolo Gioco', styles: { halign: 'left' } },
+          { content: 'Link Store', styles: { halign: 'center' } },
           { content: 'Prezzo Listino', styles: { halign: 'right' } },
           { content: 'Sconto %', styles: { halign: 'center' } },
+          { content: 'Prezzo Scontato', styles: { halign: 'right' } },
+          { content: 'Metodo Pagamento', styles: { halign: 'left' } },
           { content: 'Prezzo Finale', styles: { halign: 'right' } },
         ],
       ]
 
   const seenPassengers = new Set()
   const tableBody = groupedItems.map((item) => {
+    const rawTargetUrl = (item.url || shop?.websiteUrl || '').trim()
+    const targetUrl = rawTargetUrl && !rawTargetUrl.startsWith('http') ? `https://${rawTargetUrl}` : rawTargetUrl
+    const linkLabel = targetUrl ? 'Apri link ↗' : '-'
+
     if (isForced) {
       const passengerNorm = item.passenger.toLowerCase().trim()
       let quotaForRow = 0
@@ -268,12 +275,13 @@ export function exportGatePdf(shop, items = [], customOrderRef = null, customDat
 
       return [
         `${item.quantity}`,
-        item.url ? `${item.title} ↗` : item.title,
         item.passenger,
-        item.payment,
+        item.title,
+        linkLabel,
         formatEuro(item.totalListPrice),
         item.discountLabel || '0%',
         formatEuro(item.totalPrice),
+        item.payment,
         quotaForRow > 0 ? formatEuro(quotaForRow) : '€ 0.00',
         formatEuro(rowTotal),
       ]
@@ -281,11 +289,13 @@ export function exportGatePdf(shop, items = [], customOrderRef = null, customDat
 
     return [
       `${item.quantity}`,
-      item.url ? `${item.title} ↗` : item.title,
       item.passenger,
-      item.payment,
+      item.title,
+      linkLabel,
       formatEuro(item.totalListPrice),
       item.discountLabel || '0%',
+      formatEuro(item.totalPrice),
+      item.payment,
       formatEuro(item.totalPrice),
     ]
   })
@@ -307,50 +317,55 @@ export function exportGatePdf(shop, items = [], customOrderRef = null, customDat
       fillColor: [241, 245, 249], // grigio chiaro #f1f5f9
       textColor: [30, 41, 59], // testo scuro #1e293b
       fontStyle: 'bold',
-      fontSize: 8.5,
-      cellPadding: 3.5,
+      fontSize: 8,
+      cellPadding: 3,
       lineWidth: { bottom: 0.6 },
       lineColor: [203, 213, 225], // border #cbd5e1
     },
     bodyStyles: {
       textColor: [15, 23, 42], // testo scuro
-      fontSize: 8,
-      cellPadding: 2.8,
+      fontSize: 7.5,
+      cellPadding: 2.5,
       lineWidth: { bottom: 0.3 },
       lineColor: [226, 232, 240], // #e2e8f0 bordo inferiore sottile tra le righe
     },
     columnStyles: isForced
       ? {
-          0: { cellWidth: 10, halign: 'center', fontStyle: 'bold' }, // Q.tà
-          1: { cellWidth: 'auto', fontStyle: 'bold' }, // Titolo Gioco
-          2: { cellWidth: 28 }, // Passeggero (Socio)
-          3: { cellWidth: 20 }, // Metodo
-          4: { cellWidth: 18, halign: 'right' }, // Listino
-          5: { cellWidth: 16, halign: 'center' }, // Sconto
-          6: { cellWidth: 18, halign: 'right' }, // Netto
-          7: { cellWidth: 18, halign: 'right', fontStyle: 'bold' }, // Quota Sped.
-          8: { cellWidth: 20, halign: 'right', fontStyle: 'bold' }, // Totale
+          0: { cellWidth: 9, halign: 'center', fontStyle: 'bold' }, // Q.tà
+          1: { cellWidth: 24 }, // Passeggero (Socio)
+          2: { cellWidth: 'auto', fontStyle: 'bold' }, // Titolo Gioco
+          3: { cellWidth: 20, halign: 'center', textColor: [2, 132, 199] }, // Link Store
+          4: { cellWidth: 17, halign: 'right' }, // Listino
+          5: { cellWidth: 15, halign: 'center' }, // Sconto
+          6: { cellWidth: 17, halign: 'right' }, // Scontato
+          7: { cellWidth: 18 }, // Metodo
+          8: { cellWidth: 16, halign: 'right', fontStyle: 'bold' }, // Quota Sped.
+          9: { cellWidth: 18, halign: 'right', fontStyle: 'bold' }, // Totale
         }
       : {
-          0: { cellWidth: 12, halign: 'center', fontStyle: 'bold' }, // Q.tà
-          1: { cellWidth: 'auto', fontStyle: 'bold' }, // Titolo Gioco
-          2: { cellWidth: 32 }, // Passeggero (Socio)
-          3: { cellWidth: 26 }, // Metodo Pagamento
-          4: { cellWidth: 24, halign: 'right' }, // Prezzo Listino
-          5: { cellWidth: 20, halign: 'center' }, // Sconto %
-          6: { cellWidth: 24, halign: 'right', fontStyle: 'bold' }, // Prezzo Finale
+          0: { cellWidth: 10, halign: 'center', fontStyle: 'bold' }, // Q.tà
+          1: { cellWidth: 26 }, // Passeggero (Socio)
+          2: { cellWidth: 'auto', fontStyle: 'bold' }, // Titolo Gioco
+          3: { cellWidth: 22, halign: 'center', textColor: [2, 132, 199] }, // Link Store
+          4: { cellWidth: 20, halign: 'right' }, // Prezzo Listino
+          5: { cellWidth: 16, halign: 'center' }, // Sconto %
+          6: { cellWidth: 20, halign: 'right' }, // Prezzo Scontato
+          7: { cellWidth: 22 }, // Metodo Pagamento
+          8: { cellWidth: 20, halign: 'right', fontStyle: 'bold' }, // Prezzo Finale
         },
     didDrawCell: (data) => {
-      // Disegna un link cliccabile per il titolo del gioco se presente url (colonna indice 1)
-      if (data.section === 'body' && data.column.index === 1) {
+      // Disegna il link ipertestuale cliccabile sia sulla colonna "Link Store" (indice 3) che sul "Titolo Gioco" (indice 2)
+      if (data.section === 'body' && (data.column.index === 3 || data.column.index === 2)) {
         const rowItem = groupedItems[data.row.index]
-        if (rowItem && rowItem.url) {
-          doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url: rowItem.url })
+        const rawTargetUrl = (rowItem?.url || shop?.websiteUrl || '').trim()
+        const targetUrl = rawTargetUrl && !rawTargetUrl.startsWith('http') ? `https://${rawTargetUrl}` : rawTargetUrl
+        if (targetUrl) {
+          doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url: targetUrl })
         }
       }
 
-      // Disegna un bullet elegante colorato prima del testo del metodo di pagamento (colonna indice 3)
-      if (data.section === 'body' && data.column.index === 3) {
+      // Disegna un bullet elegante colorato prima del testo del metodo di pagamento (colonna indice 7)
+      if (data.section === 'body' && data.column.index === 7) {
         const rawText = (data.cell.raw || '').toString().toLowerCase()
         let rgb = [100, 116, 139] // default slate
         if (rawText.includes('satispay')) rgb = paymentColorMap.satispay
@@ -364,8 +379,11 @@ export function exportGatePdf(shop, items = [], customOrderRef = null, customDat
       }
     },
     willDrawCell: (data) => {
+      if (data.section === 'body' && data.column.index === 7) {
+        data.cell.styles.cellPadding = { top: 2.5, right: 3, bottom: 2.5, left: 6 }
+      }
       if (data.section === 'body' && data.column.index === 3) {
-        data.cell.styles.cellPadding = { top: 3, right: 3, bottom: 3, left: 6 }
+        data.cell.styles.fontStyle = 'bold'
       }
     },
   })

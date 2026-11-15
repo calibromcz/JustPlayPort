@@ -289,6 +289,7 @@ export function generateManifestoImbarco(shopName, items = [], orderRef = 'Ordin
     const normGame = (it.nome_gioco || it.title || 'Gioco').trim()
     const normUser = (it.nome_utente || it.passenger || 'Socio').trim()
     const normPay = (it.metodo_pagamento || it.paymentMethod || 'Contanti').trim()
+    const url = (it.url || it.link || '').trim()
     const rawPrice =
       typeof it.prezzo === 'number'
         ? it.prezzo
@@ -298,19 +299,30 @@ export function generateManifestoImbarco(shopName, items = [], orderRef = 'Ordin
     const qty = it.quantita || it.quantity || 1
     const linePrice = rawPrice * qty
 
-    const key = `${normGame.toLowerCase()}:::${normUser.toLowerCase()}:::${normPay.toLowerCase()}`
+    const listPriceUnit =
+      it.prezzo_listino_unitario !== undefined
+        ? Number(it.prezzo_listino_unitario) || rawPrice
+        : it.prezzo_listino_totale !== undefined && qty > 0
+        ? Number(it.prezzo_listino_totale) / qty
+        : rawPrice
+    const lineListPrice = Number((listPriceUnit * qty).toFixed(2))
+
+    const key = `${normGame.toLowerCase()}:::${normUser.toLowerCase()}:::${normPay.toLowerCase()}:::${url.toLowerCase()}`
 
     if (groupedMap.has(key)) {
       const existing = groupedMap.get(key)
       existing.quantita += qty
       existing.prezzo += linePrice
+      existing.prezzoListino += lineListPrice
     } else {
       groupedMap.set(key, {
         nome_gioco: normGame,
         nome_utente: normUser,
         quantita: qty,
         prezzo: linePrice,
+        prezzoListino: lineListPrice,
         metodo_pagamento: normPay,
+        url,
       })
     }
 
@@ -359,8 +371,15 @@ export function generateManifestoImbarco(shopName, items = [], orderRef = 'Ordin
     gateTotal += entry.prezzo
     lines.push(`📦 ${entry.quantita}x ${entry.nome_gioco}`)
     lines.push(`👤 ${entry.nome_utente}`)
+    if (entry.url) {
+      lines.push(`🔗 Link: ${entry.url}`)
+    }
     lines.push(`💳 ${formatPay(entry.metodo_pagamento)}`)
-    lines.push(`💰 € ${entry.prezzo.toFixed(2)}`)
+    if (entry.prezzoListino > entry.prezzo) {
+      lines.push(`🏷️ Listino: € ${entry.prezzoListino.toFixed(2)} | Prezzo Scontato: € ${entry.prezzo.toFixed(2)}`)
+    } else {
+      lines.push(`💰 Prezzo: € ${entry.prezzo.toFixed(2)}`)
+    }
     lines.push('-----------------------------------')
   })
 

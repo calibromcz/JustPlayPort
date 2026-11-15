@@ -43,17 +43,17 @@ export async function exportGateExcel(shop, items = [], orderRef = null, orderDa
       typeof it.prezzo === 'number'
         ? it.prezzo
         : typeof it.price === 'number'
-          ? it.price
-          : parseFloat(it.prezzo || it.price) || 0
+        ? it.price
+        : parseFloat(it.prezzo || it.price) || 0
 
     const listPriceUnit =
       it.prezzo_listino_unitario !== undefined && it.prezzo_listino_unitario !== null
         ? Number(it.prezzo_listino_unitario) || rawFinalPrice
         : it.prezzo_listino !== undefined && it.prezzo_listino !== null
-          ? Number(it.prezzo_listino) || rawFinalPrice
-          : it.prezzo_listino_totale !== undefined && (it.quantita || 1) > 0
-            ? Number(it.prezzo_listino_totale) / (it.quantita || 1)
-            : rawFinalPrice
+        ? Number(it.prezzo_listino) || rawFinalPrice
+        : it.prezzo_listino_totale !== undefined && (it.quantita || 1) > 0
+        ? Number(it.prezzo_listino_totale) / (it.quantita || 1)
+        : rawFinalPrice
 
     const qty = Number(it.quantita || it.quantity || 1) || 1
     const listPriceTot = Number((listPriceUnit * qty).toFixed(2))
@@ -95,26 +95,24 @@ export async function exportGateExcel(shop, items = [], orderRef = null, orderDa
   })
 
   // Genera righe di dati conformi alle chiavi esatte richieste:
-  // 1. "Socio"
-  // 2. "Gioco"
-  // 3. "Link Negozio"
-  // 4. "Quantità"
-  // 5. "Prezzo di Listino (€)"
-  // 6. "Sconto"
-  // 7. "Prezzo Finale (€)"
-  // 8. "Pagamento"
+  // "Quantità" | "Socio" | "Negozio" | "Gioco" | "Link Gioco" | "Prezzo di Listino (€)" | "Prezzo Scontato (€)" | "Metodo Pagamento" | "Prezzo Finale (€)"
   const rows = []
 
   groupedMap.forEach((item) => {
+    const rawTargetUrl = (item.url || shop?.websiteUrl || '').trim()
+    const targetUrl = rawTargetUrl && !rawTargetUrl.startsWith('http') ? `https://${rawTargetUrl}` : rawTargetUrl
+
     rows.push({
-      'Socio': item.passenger || 'Socio',
-      'Gioco': item.title || 'Gioco',
-      'Link Negozio': item.url ? item.url : '-',
       'Quantità': item.quantity || 1,
+      'Socio': item.passenger || 'Socio',
+      'Negozio': shop?.name || 'Negozio',
+      'Gioco': item.title || 'Gioco',
+      'Link Gioco': targetUrl || '-',
       'Prezzo di Listino (€)': Number(item.totalListPrice.toFixed(2)),
-      'Sconto': item.discountLabel || '0%',
+      'Sconto Applicato': item.discountLabel || '0%',
+      'Prezzo Scontato (€)': Number(item.totalPrice.toFixed(2)),
+      'Metodo Pagamento': item.payment || 'Contanti',
       'Prezzo Finale (€)': Number(item.totalPrice.toFixed(2)),
-      'Pagamento': item.payment || 'Contanti',
     })
   })
 
@@ -124,30 +122,46 @@ export async function exportGateExcel(shop, items = [], orderRef = null, orderDa
   const totalQtyAll = rows.reduce((acc, r) => acc + (Number(r['Quantità']) || 0), 0)
 
   rows.push({
-    'Socio': 'TOTALE COMPLESSIVO',
-    'Gioco': `${rows.length} articoli`,
-    'Link Negozio': '',
     'Quantità': totalQtyAll,
+    'Socio': 'TOTALE COMPLESSIVO',
+    'Negozio': shop?.name || '',
+    'Gioco': `${rows.length} articoli`,
+    'Link Gioco': '',
     'Prezzo di Listino (€)': Number(totalListAll.toFixed(2)),
-    'Sconto': '',
+    'Sconto Applicato': '',
+    'Prezzo Scontato (€)': Number(totalFinalAll.toFixed(2)),
+    'Metodo Pagamento': isForced ? `+ Sped. € ${Number(shippingInfo?.shippingCost || 0).toFixed(2)}` : 'Spedizione Gratuita',
     'Prezzo Finale (€)': Number(totalFinalAll.toFixed(2)),
-    'Pagamento': isForced ? `+ Sped. € ${Number(shippingInfo?.shippingCost || 0).toFixed(2)}` : 'Spedizione Gratuita',
   })
 
   try {
     // Crea Foglio con XLSX nativo json_to_sheet senza celle unite
     const ws = XLSX.utils.json_to_sheet(rows)
 
+    // Aggiungi link ipertestuali espliciti nativi alle celle della colonna "Link Gioco" (colonna indice 4 -> 'E')
+    let rowIndex = 2
+    groupedMap.forEach((item) => {
+      const rawTargetUrl = (item.url || shop?.websiteUrl || '').trim()
+      const targetUrl = rawTargetUrl && !rawTargetUrl.startsWith('http') ? `https://${rawTargetUrl}` : rawTargetUrl
+      const cellRef = `E${rowIndex}`
+      if (targetUrl && ws[cellRef]) {
+        ws[cellRef].l = { Target: targetUrl, Tooltip: 'Apri link store' }
+      }
+      rowIndex++
+    })
+
     // Larghezza esplicita delle colonne
     ws['!cols'] = [
-      { wch: 22 }, // Socio
-      { wch: 34 }, // Gioco
-      { wch: 25 }, // Link Negozio
       { wch: 10 }, // Quantità
+      { wch: 22 }, // Socio
+      { wch: 18 }, // Negozio
+      { wch: 32 }, // Gioco
+      { wch: 32 }, // Link Gioco
       { wch: 20 }, // Prezzo di Listino (€)
-      { wch: 14 }, // Sconto
-      { wch: 20 }, // Prezzo Finale (€)
-      { wch: 18 }, // Pagamento
+      { wch: 16 }, // Sconto Applicato
+      { wch: 20 }, // Prezzo Scontato (€)
+      { wch: 18 }, // Metodo Pagamento
+      { wch: 18 }, // Prezzo Finale (€)
     ]
 
     const wb = XLSX.utils.book_new()
