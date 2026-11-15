@@ -443,22 +443,19 @@ export function App() {
     }
   }, [flightHistory])
 
-  // REQUISITO 1: Svuotamento Registro di Volo (Reset di Test) con conferma
+  // Svuotamento Registro di Volo (Stato locale + LocalStorage + Supabase)
   const handleClearHistory = async () => {
-    const isConfirmed = window.confirm('Sei sicuro di voler svuotare completamente il Registro?')
-    if (!isConfirmed) return
-
     setFlightHistory([])
     try {
       localStorage.setItem('justplay_flight_history_v1', JSON.stringify([]))
-      localStorage.removeItem('justplay_flight_history_v1')
     } catch (e) {
-      console.error('Errore reset flight_history:', e)
+      console.error('Errore reset flight_history local storage:', e)
     }
 
-    // Se esistono tabelle di registro/storico/decolli su Supabase, le pulisce
+    // Se esistono tabelle di registro/storico/decolli/archivio su Supabase, le ripulisce
     try {
-      for (const table of ['registro', 'storico', 'decolli', 'registro_voli', 'flight_history']) {
+      const candidateTables = ['registro', 'registro_di_volo', 'storico', 'storico_ordini', 'decolli', 'registro_voli', 'flight_history']
+      for (const table of candidateTables) {
         try {
           await supabase.from(table).delete().neq('id', 0)
         } catch (_) {}

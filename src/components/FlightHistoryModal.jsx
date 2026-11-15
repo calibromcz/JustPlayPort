@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { X, Plane, Clock, Calendar, Store, CheckCircle2, FileText, Table, Trash2 } from 'lucide-react'
+import { X, Plane, Clock, Calendar, Store, CheckCircle2, FileText, Table, Trash2, AlertTriangle } from 'lucide-react'
 import { exportGatePdf } from '../utils/pdfExport.js'
 import { exportGateExcel } from '../utils/excelExport.js'
 
@@ -13,6 +13,8 @@ export function FlightHistoryModal({
   isNightMode = false,
 }) {
   const [feedback, setFeedback] = useState('')
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
+  const [isClearing, setIsClearing] = useState(false)
 
   // Blocco scroll del body con overscroll-behavior quando la modale è aperta
   React.useEffect(() => {
@@ -68,7 +70,25 @@ export function FlightHistoryModal({
   const handleClose = () => {
     document.body.style.overflow = ''
     document.body.style.overscrollBehavior = ''
+    setShowConfirmModal(false)
     onClose && onClose()
+  }
+
+  const handleConfirmClear = async () => {
+    setIsClearing(true)
+    try {
+      if (onClearHistory) {
+        await onClearHistory()
+      }
+      setShowConfirmModal(false)
+      setFeedback('✅ Registro svuotato con successo.')
+      setTimeout(() => setFeedback(''), 3500)
+    } catch (err) {
+      console.error('Errore durante lo svuotamento del registro:', err)
+      alert('Si è verificato un errore durante lo svuotamento del registro.')
+    } finally {
+      setIsClearing(false)
+    }
   }
 
   return (
@@ -108,17 +128,26 @@ export function FlightHistoryModal({
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            {/* Tasto compatto "Svuota" */}
+            {/* Tasto compatto "Svuota" in stile distruttivo elegante Liquid Glass */}
             {onClearHistory && flights && flights.length > 0 && (
               <button
                 type="button"
-                onClick={onClearHistory}
-                className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 hover:text-rose-200 border border-rose-500/30 flex items-center gap-1 transition-all active:scale-95 cursor-pointer shadow-xs"
+                onClick={() => setShowConfirmModal(true)}
+                style={{
+                  backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                  color: '#ef4444',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  borderRadius: '10px',
+                  padding: '6px 12px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                }}
+                className="hover:bg-rose-500/20 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
                 title="Svuota completamente il Registro di Volo"
-                aria-label="Svuota registro"
+                aria-label="Svuota Registro"
               >
                 <Trash2 className="w-3.5 h-3.5 stroke-[2.2]" />
-                <span>Svuota</span>
+                <span>🗑️ Svuota</span>
               </button>
             )}
 
@@ -297,6 +326,69 @@ export function FlightHistoryModal({
           )}
         </div>
       </div>
+
+      {/* MODALE DI CONFERMA SICUREZZA (Anti-click involontario) in stile Apple Liquid Glass */}
+      {showConfirmModal && (
+        <div
+          className="fixed inset-0 z-[3500] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in touch-none cursor-default"
+          onClick={(e) => {
+            e.stopPropagation()
+            if (!isClearing) setShowConfirmModal(false)
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className={`w-full max-w-sm rounded-3xl p-5 sm:p-6 shadow-2xl border flex flex-col items-center text-center animate-ticket-pop-in transition-all ${
+              isNightMode
+                ? 'bg-[#1C1C1E]/95 text-slate-100 border-white/10 shadow-black/80 backdrop-blur-2xl'
+                : 'bg-white/95 text-slate-900 border-white/80 shadow-slate-300/80 backdrop-blur-2xl'
+            }`}
+          >
+            {/* Icona Attenzione */}
+            <div className="w-12 h-12 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-500 flex items-center justify-center mb-3 shadow-inner">
+              <AlertTriangle className="w-6 h-6 stroke-[2.2]" />
+            </div>
+
+            <h3 className="text-base sm:text-lg font-black tracking-tight mb-2">
+              Svuotare tutto il Registro?
+            </h3>
+
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-6">
+              Sei sicuro di voler svuotare tutto il Registro? Questa azione eliminerà lo storico ordini e non può essere annullata.
+            </p>
+
+            <div className="flex items-center gap-3 w-full">
+              {/* Tasto Annulla */}
+              <button
+                type="button"
+                disabled={isClearing}
+                onClick={() => setShowConfirmModal(false)}
+                className={`flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all active:scale-95 cursor-pointer border ${
+                  isNightMode
+                    ? 'bg-white/10 hover:bg-white/15 text-slate-300 border-white/10'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+                }`}
+              >
+                Annulla
+              </button>
+
+              {/* Tasto Sì, svuota tutto */}
+              <button
+                type="button"
+                disabled={isClearing}
+                onClick={handleConfirmClear}
+                style={{
+                  backgroundColor: '#ef4444',
+                }}
+                className="flex-1 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-black text-white hover:bg-rose-600 transition-all active:scale-95 cursor-pointer shadow-md shadow-rose-500/30 flex items-center justify-center gap-1.5"
+              >
+                <Trash2 className="w-4 h-4 stroke-[2.2]" />
+                <span>{isClearing ? 'Svuotamento...' : 'Sì, svuota tutto'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
