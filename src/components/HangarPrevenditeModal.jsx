@@ -64,7 +64,11 @@ export function HangarPrevenditeModal({
 
   return (
     <div
-      style={{ overscrollBehavior: 'contain' }}
+      style={{
+        overscrollBehavior: 'contain',
+        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)',
+        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)',
+      }}
       className="fixed inset-0 z-[3000] flex items-center justify-center p-3 sm:p-5 overflow-hidden touch-none cursor-pointer"
       onClick={handleClose}
     >
@@ -182,20 +186,31 @@ export function HangarPrevenditeModal({
                           : 'bg-white/70 border-gray-200/80 hover:bg-white shadow-2xs'
                       }`}
                     >
-                      {/* Checkbox Automazione "Disponibile" */}
-                      <label
-                        className="flex items-center gap-2.5 cursor-pointer shrink-0 select-none group/check"
-                        title="Spunta se il gioco è uscito per spostarlo automaticamente nel Gate!"
-                      >
-                        <input
-                          type="checkbox"
-                          onChange={() => onSpostaNelGate && onSpostaNelGate(item)}
-                          className="w-5 h-5 rounded-lg border-2 border-amber-400 text-emerald-600 focus:ring-emerald-500/30 cursor-pointer transition-all"
-                        />
-                        <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 group-hover/check:underline hidden sm:inline">
-                          Disponibile?
-                        </span>
-                      </label>
+                      {/* Checkbox Automazione "Disponibile" (SOLO per il proprietario del gioco) */}
+                      {isOwner ? (
+                        <label
+                          className="flex items-center gap-2.5 cursor-pointer shrink-0 select-none group/check"
+                          title="Spunta se il gioco è uscito per spostarlo automaticamente nel Gate!"
+                        >
+                          <input
+                            type="checkbox"
+                            onChange={() => onSpostaNelGate && onSpostaNelGate(item)}
+                            className="w-5 h-5 rounded-lg border-2 border-amber-400 text-emerald-600 focus:ring-emerald-500/30 cursor-pointer transition-all"
+                          />
+                          <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 group-hover/check:underline hidden sm:inline">
+                            Disponibile?
+                          </span>
+                        </label>
+                      ) : (
+                        <div
+                          className="flex items-center gap-1.5 shrink-0 select-none opacity-60 px-2 py-1 rounded-lg bg-black/5 dark:bg-white/5"
+                          title={`In attesa di uscita (prenotato da ${item.nome_utente || 'socio'})`}
+                        >
+                          <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                            ⏳ In attesa
+                          </span>
+                        </div>
+                      )}
 
                       {/* Dettagli Prevendita (con Modalità Modifica se proprietario) */}
                       <div className="min-w-0 flex-1">

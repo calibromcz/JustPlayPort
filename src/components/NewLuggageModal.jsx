@@ -27,6 +27,7 @@ export function NewLuggageModal({
   const [paymentMethod, setPaymentMethod] = useState('Contanti')
   const [isAlreadyOnSale, setIsAlreadyOnSale] = useState(false)
   const [isPreorder, setIsPreorder] = useState(false)
+  const [preorderReleaseDate, setPreorderReleaseDate] = useState('')
   const [formError, setFormError] = useState('')
   const [justAdded, setJustAdded] = useState(false)
 
@@ -99,12 +100,17 @@ export function NewLuggageModal({
     // Se opzione "Metti in Hangar Prevendite" è attiva
     if (isPreorder && onAddPrevendita) {
       onAddPrevendita({
+        nome_utente: cleanUser,
         nome_passeggero: cleanUser,
         nome_gioco: cleanGame,
+        url: gameUrl.trim(),
         url_negozio: gameUrl.trim(),
+        id_negozio: selectedShop.id,
         negozio_scelto: selectedShop.id,
+        prezzo: parsedPrice,
         prezzo_listino: parsedListPrice,
         prezzo_vendita: parsedPrice,
+        data_uscita: preorderReleaseDate || new Date().toISOString().split('T')[0],
       })
       setJustAdded(true)
       setTimeout(() => {
@@ -422,6 +428,30 @@ export function NewLuggageModal({
                 📦 Metti in Hangar Prevendite <span className="text-[11px] text-slate-500 dark:text-slate-400">(Preordine in attesa)</span>
               </span>
             </label>
+
+            {/* CAMPO DATA DI USCITA (SPUNTA FUORI SOLO SE PREORDINE SELEZIONATO) */}
+            {isPreorder && (
+              <div className={`p-3 rounded-2xl border space-y-1.5 animate-slide-up ${
+                isNightMode ? 'bg-amber-500/5 border-amber-500/20' : 'bg-amber-50/70 border-amber-200'
+              }`}>
+                <label className="block text-xs font-bold text-amber-800 dark:text-amber-300">
+                  📅 Data stimata di uscita
+                </label>
+                <input
+                  type="date"
+                  value={preorderReleaseDate}
+                  onChange={(e) => setPreorderReleaseDate(e.target.value)}
+                  className={`w-full px-3 py-2 rounded-xl text-xs sm:text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-amber-500/40 ${
+                    isNightMode
+                      ? 'bg-slate-900 border-amber-500/30 text-white'
+                      : 'bg-white border-amber-300 text-slate-900'
+                  }`}
+                />
+                <span className="block text-[10px] text-slate-500 dark:text-slate-400">
+                  Potrai aggiornare la data o cambiare store direttamente nell'Hangar in qualsiasi momento.
+                </span>
+              </div>
+            )}
           </div>
 
           {/* ANTEPRIMA PREZZO IN TEMPO REALE */}

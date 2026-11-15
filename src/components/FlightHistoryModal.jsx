@@ -72,7 +72,11 @@ export function FlightHistoryModal({
 
   return (
     <div
-      style={{ overscrollBehavior: 'contain' }}
+      style={{
+        overscrollBehavior: 'contain',
+        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)',
+        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)',
+      }}
       className="fixed inset-0 z-[3000] flex items-center justify-center p-3 sm:p-5 bg-slate-950/70 backdrop-blur-sm animate-fade-in touch-none overflow-hidden cursor-pointer"
       onClick={handleClose}
       role="dialog"

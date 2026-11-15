@@ -523,7 +523,11 @@ export function PassportModal({
 
   return (
     <div
-      style={{ overscrollBehavior: 'contain' }}
+      style={{
+        overscrollBehavior: 'contain',
+        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)',
+        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)',
+      }}
       className="fixed inset-0 z-[3000] flex items-center justify-center p-3 sm:p-5 overflow-hidden bg-slate-950/70 backdrop-blur-md animate-ticket-pop-in touch-none cursor-pointer"
       onClick={handleClose}
     >

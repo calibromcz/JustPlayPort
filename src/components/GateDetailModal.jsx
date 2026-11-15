@@ -81,7 +81,11 @@ export function GateDetailModal({
 
   return (
     <div
-      style={{ overscrollBehavior: 'contain' }}
+      style={{
+        overscrollBehavior: 'contain',
+        paddingTop: 'calc(env(safe-area-inset-top, 0px) + 12px)',
+        paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 80px)',
+      }}
       className="fixed inset-0 z-[3000] flex flex-col justify-end sm:justify-center items-center p-0 sm:p-4 touch-none overflow-hidden"
       onClick={handleClose}
     >
