@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo } from 'react'
-import { ArrowLeft, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { GateAccordionItem } from './GateAccordionItem.jsx'
 import { getShopEffectiveItems, calculateDragonstoreDiscount } from '../utils/pricing.js'
 
@@ -108,20 +108,8 @@ export function GateDetailModal({
           }`}
         >
           <div className="flex items-center justify-between">
-            {/* Tasto Indietro minimal Liquid Glass a sinistra: pillola compatta e chiara */}
-            <button
-              type="button"
-              onClick={handleClose}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 min-h-[36px] rounded-full text-xs sm:text-sm font-bold bg-white/90 dark:bg-slate-800/90 text-slate-800 dark:text-white backdrop-blur-xl border border-black/10 dark:border-white/20 shadow-xs active:scale-95 transition-all cursor-pointer"
-              title="Torna ai Gate"
-              aria-label="Torna ai Gate"
-            >
-              <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
-              <span>Gate</span>
-            </button>
-
             {/* Titolo centrato compatto con nome negozio */}
-            <div className="text-center truncate px-2 flex-1">
+            <div className="text-left truncate px-1 flex-1">
               <span className="font-bold text-sm sm:text-base tracking-tight truncate block">
                 {shop.name}
               </span>
@@ -190,20 +178,6 @@ export function GateDetailModal({
             isNightMode={isNightMode}
             isDetailView={true}
           />
-        </div>
-
-        {/* 2. PULSANTE IN BASSO A SINISTRA (SEMPRE RAGGIUNGIBILE COL POLLICE, z-index 9999) */}
-        <div className="absolute bottom-4 left-4 z-[9999] pointer-events-auto">
-          <button
-            type="button"
-            onClick={handleClose}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs sm:text-sm font-bold bg-white/90 dark:bg-slate-800/90 text-slate-800 dark:text-white backdrop-blur-xl border border-black/10 dark:border-white/20 shadow-[0_8px_20px_rgba(0,0,0,0.18)] active:scale-95 transition-all cursor-pointer"
-            title="Torna ai Gate"
-            aria-label="Torna ai Gate"
-          >
-            <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
-            <span>Gate</span>
-          </button>
         </div>
       </div>
     </div>

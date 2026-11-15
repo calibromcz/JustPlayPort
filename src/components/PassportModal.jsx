@@ -19,7 +19,6 @@ import {
   Lock,
   Layers,
   CheckCircle2,
-  ArrowLeft,
 } from 'lucide-react'
 import { exportPassengerMonthlyStatementPdf } from '../utils/pdfExport.js'
 import { exportPassengerMonthlyStatementExcel } from '../utils/excelExport.js'
@@ -543,27 +542,15 @@ export function PassportModal({
           </div>
         )}
 
-        {/* Copertina Superiore Passaporto con Tasto Indietro a Sinistra */}
+        {/* Copertina Superiore Passaporto */}
         <div className="px-3.5 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white flex items-center justify-between gap-2 border-b-2 border-amber-500/80 shrink-0">
-          {/* Tasto Indietro a sinistra in stile iOS Liquid Glass */}
-          <button
-            type="button"
-            onClick={handleClose}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 min-h-[36px] rounded-full text-xs sm:text-sm font-bold bg-white/90 dark:bg-slate-800/90 text-slate-800 dark:text-white backdrop-blur-xl border border-black/10 dark:border-white/20 shadow-xs active:scale-95 transition-all cursor-pointer shrink-0"
-            title="Torna ai Gate"
-            aria-label="Torna ai Gate"
-          >
-            <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
-            <span>Gate</span>
-          </button>
-
-          <div className="flex items-center gap-2 flex-1 min-w-0 justify-center text-center">
+          <div className="flex items-center gap-2 flex-1 min-w-0 justify-start text-left">
             <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-400 flex items-center justify-center text-base shadow-inner text-amber-300 shrink-0">
               🛂
             </div>
             <div className="truncate">
               <h2 className="text-base sm:text-lg font-black text-white tracking-wide truncate">
-                Passaporto
+                Passaporto Ludico
               </h2>
             </div>
           </div>
@@ -579,9 +566,9 @@ export function PassportModal({
           </button>
         </div>
 
-        {/* Pagine Interne del Passaporto */}
+        {/* Pagine Interne del Passaporto: spaziature verticali ridotte a 8-10px */}
         <div
-          className={`p-3.5 sm:p-6 overflow-y-auto space-y-4 sm:space-y-5 flex-1 transition-colors duration-300 ${
+          className={`p-3 sm:p-5 overflow-y-auto space-y-2.5 sm:space-y-3.5 flex-1 transition-colors duration-300 ${
             isNightMode ? 'bg-[#070d19] text-slate-100' : 'bg-[#fafaf9] text-slate-800'
           }`}
         >
@@ -1368,24 +1355,12 @@ export function PassportModal({
           </div>
         </div>
 
-        {/* Footer Passaporto con Tasto in Basso a Sinistra sempre raggiungibile */}
-        <div className="p-3.5 sm:p-4 bg-slate-900 border-t border-slate-800 flex items-center justify-between shrink-0 gap-2">
-          {/* 2. PULSANTE IN BASSO A SINISTRA (SEMPRE RAGGIUNGIBILE COL POLLICE) */}
+        {/* Footer Passaporto */}
+        <div className="p-3.5 sm:p-4 bg-slate-900 border-t border-slate-800 flex items-center justify-end shrink-0 gap-2">
           <button
             type="button"
             onClick={handleClose}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs sm:text-sm font-bold bg-white/90 text-slate-900 backdrop-blur-xl border border-white/20 shadow-md active:scale-95 transition-all cursor-pointer"
-            title="Torna ai Gate"
-            aria-label="Torna ai Gate"
-          >
-            <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
-            <span>Gate</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handleClose}
-            className={`px-4 py-2 min-h-[40px] rounded-full font-black text-xs sm:text-sm btn-aviation cursor-pointer shadow-md flex items-center justify-center ${
+            className={`px-5 py-2 min-h-[40px] rounded-full font-black text-xs sm:text-sm btn-aviation cursor-pointer shadow-md flex items-center justify-center ${
               isNightMode
                 ? 'bg-cyan-600 hover:bg-cyan-500 text-slate-950 shadow-[0_0_15px_rgba(6,182,212,0.3)]'
                 : 'bg-blue-600 hover:bg-blue-700 text-white'

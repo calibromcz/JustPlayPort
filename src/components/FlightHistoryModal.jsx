@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { X, Plane, Clock, Calendar, Store, CheckCircle2, FileText, Table, Trash2, ArrowLeft } from 'lucide-react'
+import { X, Plane, Clock, Calendar, Store, CheckCircle2, FileText, Table, Trash2 } from 'lucide-react'
 import { exportGatePdf } from '../utils/pdfExport.js'
 import { exportGateExcel } from '../utils/excelExport.js'
 
@@ -89,19 +89,7 @@ export function FlightHistoryModal({
       >
         {/* Intestazione Modale */}
         <div className="p-3.5 sm:p-5 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800 shrink-0 gap-2">
-          {/* Tasto Indietro a sinistra in stile iOS Liquid Glass */}
-          <button
-            type="button"
-            onClick={handleClose}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 min-h-[36px] rounded-full text-xs sm:text-sm font-bold bg-white/90 dark:bg-slate-800/90 text-slate-800 dark:text-white backdrop-blur-xl border border-black/10 dark:border-white/20 shadow-xs active:scale-95 transition-all cursor-pointer shrink-0"
-            title="Torna ai Gate"
-            aria-label="Torna ai Gate"
-          >
-            <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
-            <span>Gate</span>
-          </button>
-
-          <div className="flex items-center gap-2.5 flex-1 min-w-0 justify-center text-center">
+          <div className="flex items-center gap-2.5 flex-1 min-w-0 justify-start text-left">
             <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-lg shadow-inner shrink-0 ${
               isNightMode ? 'bg-cyan-500/20 border border-cyan-400 text-cyan-300' : 'bg-blue-600/20 border border-blue-400/40 text-blue-400'
             }`}>
@@ -136,8 +124,8 @@ export function FlightHistoryModal({
           </div>
         )}
 
-        {/* Corpo Modale: Lista degli Ordini Passati */}
-        <div className={`p-4 sm:p-6 overflow-y-auto space-y-3.5 flex-1 transition-colors ${
+        {/* Corpo Modale: Lista degli Ordini Passati (Spaziature verticali ridotte a 8-10px) */}
+        <div className={`p-3 sm:p-5 overflow-y-auto space-y-2 sm:space-y-2.5 flex-1 transition-colors ${
           isNightMode ? 'bg-[#070d19]' : 'bg-slate-50/60'
         }`}>
           {!flights || (Array.isArray(flights) && flights.length === 0) ? (
@@ -290,23 +278,11 @@ export function FlightHistoryModal({
           )}
         </div>
 
-        {/* Footer Modale con Tasto in Basso a Sinistra sempre raggiungibile */}
+        {/* Footer Modale */}
         <div className={`p-3 sm:p-4 border-t flex items-center justify-between gap-3 text-xs font-medium ${
           isNightMode ? 'bg-slate-900 border-slate-800 text-slate-300' : 'bg-slate-100 border-slate-200 text-slate-700'
         }`}>
-          {/* 2. PULSANTE IN BASSO A SINISTRA (SEMPRE RAGGIUNGIBILE COL POLLICE) */}
-          <button
-            type="button"
-            onClick={handleClose}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs sm:text-sm font-bold bg-white/90 text-slate-900 backdrop-blur-xl border border-black/10 shadow-md active:scale-95 transition-all cursor-pointer shrink-0"
-            title="Torna ai Gate"
-            aria-label="Torna ai Gate"
-          >
-            <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
-            <span>Gate</span>
-          </button>
-
-          <span className="truncate hidden sm:inline">I documenti mantengono numerazione progressiva e quote.</span>
+          <span className="truncate">I documenti mantengono numerazione progressiva e quote.</span>
         </div>
       </div>
     </div>

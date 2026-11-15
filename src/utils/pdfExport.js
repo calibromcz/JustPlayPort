@@ -268,7 +268,7 @@ export function exportGatePdf(shop, items = [], customOrderRef = null, customDat
 
       return [
         `${item.quantity}`,
-        item.title,
+        item.url ? `${item.title} ↗` : item.title,
         item.passenger,
         item.payment,
         formatEuro(item.totalListPrice),
@@ -281,7 +281,7 @@ export function exportGatePdf(shop, items = [], customOrderRef = null, customDat
 
     return [
       `${item.quantity}`,
-      item.title,
+      item.url ? `${item.title} ↗` : item.title,
       item.passenger,
       item.payment,
       formatEuro(item.totalListPrice),
@@ -341,6 +341,14 @@ export function exportGatePdf(shop, items = [], customOrderRef = null, customDat
           6: { cellWidth: 24, halign: 'right', fontStyle: 'bold' }, // Prezzo Finale
         },
     didDrawCell: (data) => {
+      // Disegna un link cliccabile per il titolo del gioco se presente url (colonna indice 1)
+      if (data.section === 'body' && data.column.index === 1) {
+        const rowItem = groupedItems[data.row.index]
+        if (rowItem && rowItem.url) {
+          doc.link(data.cell.x, data.cell.y, data.cell.width, data.cell.height, { url: rowItem.url })
+        }
+      }
+
       // Disegna un bullet elegante colorato prima del testo del metodo di pagamento (colonna indice 3)
       if (data.section === 'body' && data.column.index === 3) {
         const rawText = (data.cell.raw || '').toString().toLowerCase()

@@ -12,7 +12,6 @@ import {
   Sparkles,
   Pencil,
   Check,
-  ArrowLeft,
 } from 'lucide-react'
 
 export function HangarPrevenditeModal({
@@ -141,25 +140,13 @@ export function HangarPrevenditeModal({
             isNightMode ? 'border-white/10 bg-white/[0.02]' : 'border-gray-200/80 bg-white/40'
           }`}
         >
-          {/* Tasto Indietro minimal Liquid Glass a sinistra: pillola compatta e chiara */}
-          <button
-            type="button"
-            onClick={handleClose}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 min-h-[36px] rounded-full text-xs sm:text-sm font-bold bg-white/90 dark:bg-slate-800/90 text-slate-800 dark:text-white backdrop-blur-xl border border-black/10 dark:border-white/20 shadow-xs active:scale-95 transition-all cursor-pointer shrink-0"
-            title="Torna ai Gate"
-            aria-label="Torna ai Gate"
-          >
-            <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
-            <span>Gate</span>
-          </button>
-
-          <div className="flex items-center gap-2 min-w-0 flex-1 justify-center">
+          <div className="flex items-center gap-2 min-w-0 flex-1 justify-start">
             <div className="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-400/30 flex items-center justify-center text-amber-500 shadow-xs shrink-0">
               <Package className="w-4 h-4 stroke-[2.2]" />
             </div>
-            <div className="truncate text-center">
-              <h2 className="text-base sm:text-lg font-black tracking-tight flex items-center gap-1.5 justify-center">
-                <span>Hangar</span>
+            <div className="truncate text-left">
+              <h2 className="text-base sm:text-lg font-black tracking-tight flex items-center gap-1.5">
+                <span>Hangar Prevendite</span>
                 <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 font-bold">
                   {prevendite.length}
                 </span>
@@ -182,8 +169,8 @@ export function HangarPrevenditeModal({
           </button>
         </div>
 
-        {/* CONTENUTO SCORREVOLE */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 pb-20 sm:pb-16 space-y-5">
+        {/* CONTENUTO SCORREVOLE COMPATTO: spaziature verticali ridotte a 8-10px */}
+        <div className="flex-1 overflow-y-auto p-3 sm:p-5 pb-20 sm:pb-16 space-y-2.5 sm:space-y-3.5">
           {/* 1. FORM AGGIUNTA PREVENDITA */}
           <form
             onSubmit={handleSubmit}
@@ -490,20 +477,6 @@ export function HangarPrevenditeModal({
               </div>
             )}
           </div>
-        </div>
-
-        {/* 2. PULSANTE IN BASSO A SINISTRA (SEMPRE RAGGIUNGIBILE COL POLLICE, z-index 9999) */}
-        <div className="absolute bottom-4 left-4 z-[9999] pointer-events-auto">
-          <button
-            type="button"
-            onClick={handleClose}
-            className="flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs sm:text-sm font-bold bg-white/90 dark:bg-slate-800/90 text-slate-800 dark:text-white backdrop-blur-xl border border-black/10 dark:border-white/20 shadow-[0_8px_20px_rgba(0,0,0,0.18)] active:scale-95 transition-all cursor-pointer"
-            title="Torna ai Gate"
-            aria-label="Torna ai Gate"
-          >
-            <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
-            <span>Gate</span>
-          </button>
         </div>
       </div>
     </div>

@@ -97,17 +97,19 @@ export async function exportGateExcel(shop, items = [], orderRef = null, orderDa
   // Genera righe di dati conformi alle chiavi esatte richieste:
   // 1. "Socio"
   // 2. "Gioco"
-  // 3. "Quantità"
-  // 4. "Prezzo di Listino (€)"
-  // 5. "Sconto"
-  // 6. "Prezzo Finale (€)"
-  // 7. "Pagamento"
+  // 3. "Link Negozio"
+  // 4. "Quantità"
+  // 5. "Prezzo di Listino (€)"
+  // 6. "Sconto"
+  // 7. "Prezzo Finale (€)"
+  // 8. "Pagamento"
   const rows = []
 
   groupedMap.forEach((item) => {
     rows.push({
       'Socio': item.passenger || 'Socio',
       'Gioco': item.title || 'Gioco',
+      'Link Negozio': item.url ? item.url : '-',
       'Quantità': item.quantity || 1,
       'Prezzo di Listino (€)': Number(item.totalListPrice.toFixed(2)),
       'Sconto': item.discountLabel || '0%',
@@ -124,6 +126,7 @@ export async function exportGateExcel(shop, items = [], orderRef = null, orderDa
   rows.push({
     'Socio': 'TOTALE COMPLESSIVO',
     'Gioco': `${rows.length} articoli`,
+    'Link Negozio': '',
     'Quantità': totalQtyAll,
     'Prezzo di Listino (€)': Number(totalListAll.toFixed(2)),
     'Sconto': '',
@@ -135,10 +138,11 @@ export async function exportGateExcel(shop, items = [], orderRef = null, orderDa
     // Crea Foglio con XLSX nativo json_to_sheet senza celle unite
     const ws = XLSX.utils.json_to_sheet(rows)
 
-    // Larghezza esplicita delle 7 colonne richieste
+    // Larghezza esplicita delle colonne
     ws['!cols'] = [
-      { wch: 24 }, // Socio
-      { wch: 35 }, // Gioco
+      { wch: 22 }, // Socio
+      { wch: 34 }, // Gioco
+      { wch: 25 }, // Link Negozio
       { wch: 10 }, // Quantità
       { wch: 20 }, // Prezzo di Listino (€)
       { wch: 14 }, // Sconto

@@ -3,6 +3,84 @@
  * e la formattazione dei messaggi WhatsApp per singolo negozio.
  */
 
+/**
+ * REQUISITO: Parsing Intelligente del Prezzo e Prezzo di Listino.
+ * Se l'utente scrive o incolla diciture con doppio prezzo, es:
+ * - "€ 80 barrato - € 60 vendita"
+ * - "80 barrato 60"
+ * - "80 - 60"
+ * - "80 / 60"
+ * - "listino 80 sconto 60"
+ * - "80€ (ora 60€)"
+ * Il sistema estrae automaticamente:
+ * - listPrice: 80.00 (prezzo di listino / barrato)
+ * - salePrice: 60.00 (prezzo di vendita effettivo da pagare)
+ * - hasExplicitList: true
+ * Se invece è presente un solo numero (es. "49.90"), listPrice = salePrice = 49.90.
+ */
+export function parsePriceInputWithList(input, extraText = '') {
+  const combined = `${input || ''} ${extraText || ''}`.trim()
+  if (!combined) {
+    return { listPrice: 0, salePrice: 0, hasExplicitList: false }
+  }
+
+  // Cerca pattern espliciti: "80 barrato ... 60" o "listino 80 ... 60"
+  const regexKeyword = /(?:€\s*)?(\d+(?:[.,]\d+)?)\s*(?:€\s*)?(?:barrato|listino|originale|partenza|prima)\b[^\d]*(?:€\s*)?(\d+(?:[.,]\d+)?)/i
+  const matchKeyword = combined.match(regexKeyword)
+  if (matchKeyword) {
+    const p1 = parseFloat(matchKeyword[1].replace(',', '.'))
+    const p2 = parseFloat(matchKeyword[2].replace(',', '.'))
+    if (!isNaN(p1) && !isNaN(p2) && p1 > 0 && p2 > 0) {
+      return {
+        listPrice: Number(p1.toFixed(2)),
+        salePrice: Number(p2.toFixed(2)),
+        hasExplicitList: true,
+      }
+    }
+  }
+
+  // Cerca separatori classici tra 2 numeri: "80 - 60", "80 / 60", "80 -> 60", "80 | 60", "80 vendita 60"
+  const regexSeparated = /(?:€\s*)?(\d+(?:[.,]\d+)?)\s*(?:€\s*)?[-\/—>|e\s]+(?:vendita|scontato|sconto|ora|netto)?\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/i
+  const matchSep = combined.match(regexSeparated)
+  if (matchSep) {
+    const p1 = parseFloat(matchSep[1].replace(',', '.'))
+    const p2 = parseFloat(matchSep[2].replace(',', '.'))
+    if (!isNaN(p1) && !isNaN(p2) && p1 > 0 && p2 > 0) {
+      const listP = Math.max(p1, p2)
+      const saleP = Math.min(p1, p2)
+      return {
+        listPrice: Number(listP.toFixed(2)),
+        salePrice: Number(saleP.toFixed(2)),
+        hasExplicitList: listP > saleP,
+      }
+    }
+  }
+
+  // Estrazione generica di tutti i numeri nel solo campo input
+  const allNums = (input || '').replace(/,/g, '.').match(/\d+(?:\.\d+)?/g)
+  if (allNums && allNums.length >= 2) {
+    const n1 = parseFloat(allNums[0])
+    const n2 = parseFloat(allNums[1])
+    if (!isNaN(n1) && !isNaN(n2) && n1 > 0 && n2 > 0 && n1 !== n2) {
+      const listP = Math.max(n1, n2)
+      const saleP = Math.min(n1, n2)
+      return {
+        listPrice: Number(listP.toFixed(2)),
+        salePrice: Number(saleP.toFixed(2)),
+        hasExplicitList: true,
+      }
+    }
+  }
+
+  // Singolo numero standard
+  const single = parseFloat(String(input).replace(',', '.')) || 0
+  return {
+    listPrice: Number(single.toFixed(2)),
+    salePrice: Number(single.toFixed(2)),
+    hasExplicitList: false,
+  }
+}
+
 export function parseDiscount(discountStr) {
   if (!discountStr || typeof discountStr !== 'string') {
     return {

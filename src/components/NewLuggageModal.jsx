@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { X, ArrowLeft, Plane, Sparkles, AlertCircle, Check, Package, ChevronDown } from 'lucide-react'
-import { calculateItemPriceWithQuantity } from '../utils/pricing.js'
+import { X, Plane, Sparkles, AlertCircle, Check, Package, ChevronDown } from 'lucide-react'
+import { calculateItemPriceWithQuantity, parsePriceInputWithList } from '../utils/pricing.js'
 
 // Metodi di pagamento: SOLO Contanti e PayPal
 const PAYMENT_OPTIONS = [
@@ -57,10 +57,22 @@ export function NewLuggageModal({
   const selectedShop = shops.find((s) => s.id === selectedShopId) || shops[0] || {}
   const isDragonstore = selectedShop?.id === 'dragonstore' || selectedShop?.name?.toLowerCase().includes('dragonstore')
 
+  // Parsing intelligente del prezzo inserito (supporta sia singolo numero es. 49.90 che formato doppio "80 barrato 60", "80 - 60", "€ 80 barrato - € 60 vendita")
+  const parsedPriceData = parsePriceInputWithList(rawPriceInput, `${gameName} ${gameUrl}`)
+  const parsedPrice = parsedPriceData.salePrice || 0
+  const parsedListPrice = parsedPriceData.listPrice || parsedPrice
+
   // Anteprima calcolo prezzo
-  const parsedPrice = parseFloat(String(rawPriceInput).replace(',', '.')) || 0
   const previewInfo = parsedPrice > 0
-    ? calculateItemPriceWithQuantity(parsedPrice, selectedShop.discount, quantity, isAlreadyOnSale)
+    ? parsedPriceData.hasExplicitList
+      ? {
+          finalPrice: Number((parsedPrice * quantity).toFixed(2)),
+          savings: Number(((parsedListPrice - parsedPrice) * quantity).toFixed(2)),
+          discountBadge: `-${Math.round(((parsedListPrice - parsedPrice) / parsedListPrice) * 100)}%`,
+          isExplicit: true,
+          listPriceTot: Number((parsedListPrice * quantity).toFixed(2)),
+        }
+      : calculateItemPriceWithQuantity(parsedPrice, selectedShop.discount, quantity, isAlreadyOnSale)
     : null
 
   const handleSubmit = (e) => {
@@ -78,7 +90,7 @@ export function NewLuggageModal({
       return
     }
     if (isNaN(parsedPrice) || parsedPrice <= 0) {
-      setFormError('Inserisci un prezzo valido (es. 29.99).')
+      setFormError('Inserisci un prezzo valido (es. 29.99 o 80 barrato 60).')
       return
     }
 
@@ -91,7 +103,8 @@ export function NewLuggageModal({
         nome_gioco: cleanGame,
         url_negozio: gameUrl.trim(),
         negozio_scelto: selectedShop.id,
-        prezzo_listino: parsedPrice,
+        prezzo_listino: parsedListPrice,
+        prezzo_vendita: parsedPrice,
       })
       setJustAdded(true)
       setTimeout(() => {
@@ -102,12 +115,27 @@ export function NewLuggageModal({
     }
 
     // Altrimenti imbarco normale nel Gate
-    const effectiveDiscount = isDragonstore ? null : selectedShop.discount
-    const pricing = calculateItemPriceWithQuantity(parsedPrice, effectiveDiscount, quantity, isAlreadyOnSale)
+    let finalItemPrice = 0
+    let listPriceUnit = parsedListPrice
+    let listPriceTot = Number((parsedListPrice * quantity).toFixed(2))
+    let savings = 0
+    let discountBadge = null
+    let isSaleSite = isAlreadyOnSale
 
-    const finalItemPrice = isDragonstore
-      ? Number((parsedPrice * quantity).toFixed(2))
-      : pricing.finalPrice
+    if (parsedPriceData.hasExplicitList) {
+      // Se l'utente ha inserito esplicitamente sia listino che vendita (es. "80 barrato 60")
+      finalItemPrice = Number((parsedPrice * quantity).toFixed(2))
+      savings = Number(((parsedListPrice - parsedPrice) * quantity).toFixed(2))
+      discountBadge = `-${Math.round(((parsedListPrice - parsedPrice) / parsedListPrice) * 100)}%`
+      isSaleSite = true
+    } else {
+      const effectiveDiscount = isDragonstore ? null : selectedShop.discount
+      const pricing = calculateItemPriceWithQuantity(parsedPrice, effectiveDiscount, quantity, isAlreadyOnSale)
+      finalItemPrice = isDragonstore ? Number((parsedPrice * quantity).toFixed(2)) : pricing.finalPrice
+      savings = isDragonstore ? 0 : pricing.savings || 0
+      discountBadge = isDragonstore ? null : pricing.discountBadge
+      isSaleSite = isDragonstore ? false : pricing.isAlreadyOnSale
+    }
 
     if (onAddItem) {
       onAddItem({
@@ -120,11 +148,11 @@ export function NewLuggageModal({
         url: gameUrl.trim(),
         quantita: quantity,
         prezzo: finalItemPrice,
-        prezzo_listino_unitario: parsedPrice,
-        prezzo_listino_totale: Number((parsedPrice * quantity).toFixed(2)),
-        risparmio: isDragonstore ? 0 : pricing.savings || 0,
-        is_offerta_sito: isDragonstore ? false : pricing.isAlreadyOnSale,
-        discount_badge: isDragonstore ? null : pricing.discountBadge,
+        prezzo_listino_unitario: listPriceUnit,
+        prezzo_listino_totale: listPriceTot,
+        risparmio: savings,
+        is_offerta_sito: isSaleSite,
+        discount_badge: discountBadge,
         metodo_pagamento: paymentMethod,
         created_at: new Date().toISOString(),
       })
@@ -172,7 +200,7 @@ export function NewLuggageModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* =========================================================================
-            REQUISITO 5: HEADER STICKY LIQUID GLASS IN ALTO (Tasto SX "← Torna al Gate" e DX "✕", min 44x44px)
+            HEADER STICKY LIQUID GLASS IN ALTO (Tasto Chiudi "✕", min 44x44px)
            ========================================================================= */}
         <div
           style={{
@@ -185,18 +213,6 @@ export function NewLuggageModal({
           }}
           className="flex items-center justify-between px-4 py-3 border-b border-slate-200/80 dark:border-white/10 shrink-0 gap-2"
         >
-          {/* Tasto Torna al Gate / Indietro a sinistra (Target tocco min 44x44px) */}
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] min-w-[44px] rounded-full text-xs font-bold text-slate-700 dark:text-slate-200 bg-black/[0.05] dark:bg-white/10 hover:bg-black/[0.1] dark:hover:bg-white/20 active:scale-95 transition-all cursor-pointer shadow-2xs"
-            aria-label="Torna al Gate"
-            title="Torna al Gate"
-          >
-            <ArrowLeft className="w-4 h-4 stroke-[2.5]" />
-            <span>← Torna al Gate</span>
-          </button>
-
           {/* Titolo centrato: "Aggiungi al Gate" */}
           <div className="flex items-center gap-1.5 font-bold text-base tracking-tight truncate">
             <span>✈️</span>
@@ -410,13 +426,20 @@ export function NewLuggageModal({
 
           {/* ANTEPRIMA PREZZO IN TEMPO REALE */}
           {previewInfo && !isPreorder && (
-            <div className={`p-3 rounded-2xl border text-xs flex items-center justify-between gap-2 shadow-xs ${
+            <div className={`p-3 rounded-2xl border text-xs flex flex-wrap items-center justify-between gap-2 shadow-xs ${
               isNightMode ? 'bg-blue-950/30 border-blue-500/30 text-blue-200' : 'bg-blue-50 border-blue-200 text-blue-900'
             }`}>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Sparkles className="w-4 h-4 text-blue-500 shrink-0" />
-                <span>Prezzo Netto Stimato: <strong className="font-mono-code text-sm font-bold">{previewInfo.finalPrice.toFixed(2)}€</strong></span>
-                {previewInfo.discountBadge && !isAlreadyOnSale && (
+                {previewInfo.isExplicit ? (
+                  <span className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-slate-500 line-through">Listino: {previewInfo.listPriceTot.toFixed(2)}€</span>
+                    <span>→ Prezzo Vendita: <strong className="font-mono-code text-sm font-bold text-emerald-600 dark:text-emerald-400">{previewInfo.finalPrice.toFixed(2)}€</strong></span>
+                  </span>
+                ) : (
+                  <span>Prezzo Netto Stimato: <strong className="font-mono-code text-sm font-bold">{previewInfo.finalPrice.toFixed(2)}€</strong></span>
+                )}
+                {previewInfo.discountBadge && (
                   <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-blue-600 text-white">
                     {previewInfo.discountBadge}
                   </span>
