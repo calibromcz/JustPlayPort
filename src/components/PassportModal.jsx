@@ -1343,7 +1343,7 @@ export function PassportModal({
 
           {/* Dati Passaporto MRZ (Machine Readable Zone) */}
           <div
-            className={`p-3 rounded-xl font-mono-code text-[10px] tracking-widest uppercase leading-tight select-none border ${
+            className={`p-3 rounded-xl font-mono-code text-[10px] tracking-widest uppercase leading-tight select-none border mb-2 ${
               isNightMode ? 'bg-[#050b14] text-slate-500 border-slate-800' : 'bg-slate-100 text-slate-500 border-slate-200'
             }`}
           >
@@ -1353,21 +1353,6 @@ export function PassportModal({
             </div>
             <div>JP2026884M9999999&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;06</div>
           </div>
-        </div>
-
-        {/* Footer Passaporto */}
-        <div className="p-3.5 sm:p-4 bg-slate-900 border-t border-slate-800 flex items-center justify-end shrink-0 gap-2">
-          <button
-            type="button"
-            onClick={handleClose}
-            className={`px-5 py-2 min-h-[40px] rounded-full font-black text-xs sm:text-sm btn-aviation cursor-pointer shadow-md flex items-center justify-center ${
-              isNightMode
-                ? 'bg-cyan-600 hover:bg-cyan-500 text-slate-950 shadow-[0_0_15px_rgba(6,182,212,0.3)]'
-                : 'bg-blue-600 hover:bg-blue-700 text-white'
-            }`}
-          >
-            Chiudi Lounge
-          </button>
         </div>
       </div>
     </div>

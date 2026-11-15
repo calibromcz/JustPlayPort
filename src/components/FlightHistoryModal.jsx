@@ -277,13 +277,6 @@ export function FlightHistoryModal({
             })
           )}
         </div>
-
-        {/* Footer Modale */}
-        <div className={`p-3 sm:p-4 border-t flex items-center justify-between gap-3 text-xs font-medium ${
-          isNightMode ? 'bg-slate-900 border-slate-800 text-slate-300' : 'bg-slate-100 border-slate-200 text-slate-700'
-        }`}>
-          <span className="truncate">I documenti mantengono numerazione progressiva e quote.</span>
-        </div>
       </div>
     </div>
   )
