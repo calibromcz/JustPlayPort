@@ -2,17 +2,13 @@ import React, { useState, useEffect, useMemo } from 'react'
 import {
   ChevronDown,
   ChevronUp,
-  Plus,
   Trash2,
   Plane,
   Ticket,
   Luggage,
-  Sparkles,
   Check,
   AlertCircle,
   MessageCircle,
-  User,
-  Lock,
   ExternalLink,
   ClipboardCheck,
   Copy,
@@ -20,7 +16,6 @@ import {
   Share2,
 } from 'lucide-react'
 import {
-  calculateItemPriceWithQuantity,
   formatSingleStoreShare,
   generateDistintaDiVolo,
   generateManifestoImbarco,
@@ -37,12 +32,6 @@ const formatCompactNum = (val) => {
   if (isNaN(num)) return '0'
   return Number.isInteger(num) ? num.toString() : parseFloat(num.toFixed(2)).toString()
 }
-
-// Opzioni Metodo di Pagamento (Esclusivamente PayPal e Contanti)
-const PAYMENT_OPTIONS = [
-  { id: 'PayPal', label: 'PayPal', emoji: '🅿️', activeColor: 'bg-blue-600 text-white border-blue-700 shadow-xs' },
-  { id: 'Contanti', label: 'Contanti', emoji: '💵', activeColor: 'bg-emerald-600 text-white border-emerald-700 shadow-xs' },
-]
 
 export function GateAccordionItem({
   shop,
@@ -62,16 +51,6 @@ export function GateAccordionItem({
   isNightMode = false,
   isDetailView = false,
 }) {
-  // Form state: Nome Passeggero, Nome Gioco, Link Store, Prezzo Listino, Quantità, Checkbox Già in offerta, Metodo di Pagamento
-  const [passengerName, setPassengerName] = useState(savedPassengerName || '')
-  const [gameName, setGameName] = useState('')
-  const [gameUrl, setGameUrl] = useState('')
-  const [rawPriceInput, setRawPriceInput] = useState('')
-  const [quantity, setQuantity] = useState(1)
-  const [isAlreadyOnSale, setIsAlreadyOnSale] = useState(false)
-  const [paymentMethod, setPaymentMethod] = useState('Contanti')
-  const [formError, setFormError] = useState('')
-  const [justAdded, setJustAdded] = useState(false)
   const [shareFeedback, setShareFeedback] = useState(false)
   const [copyFeedback, setCopyFeedback] = useState(false)
   const [feedbackMessage, setFeedbackMessage] = useState('')
@@ -178,14 +157,7 @@ export function GateAccordionItem({
     }
   }
 
-  // Sincronizza il nome passeggero memorizzato
-  useEffect(() => {
-    if (savedPassengerName && !passengerName) {
-      setPassengerName(savedPassengerName)
-    }
-  }, [savedPassengerName])
 
-  // REQUISITO: Sconto dinamico per Dragonstore (Sconto base 20% -> 32% se listini >= 300€)
   const isDragonstore = shop?.id === 'dragonstore' || shop?.name?.toLowerCase().includes('dragonstore')
   const dragonInfo = isDragonstore ? calculateDragonstoreDiscount(items, ordineForzato) : null
 
@@ -252,68 +224,6 @@ export function GateAccordionItem({
       totalToPay: Number((p.totalItemsPrice + quota).toFixed(2)),
     }))
   }, [effectiveItems, isForcedActive, shippingPerPassenger])
-
-  // Invio del form di check-in gioco (Integrazione continua: sempre consentita)
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    const trimmedPassenger = passengerName.trim()
-    const trimmedGame = gameName.trim()
-    const parsedPrice = parseFloat(String(rawPriceInput).replace(',', '.'))
-
-    if (!trimmedPassenger) {
-      setFormError('Inserisci il Nome del Passeggero.')
-      return
-    }
-    if (!trimmedGame) {
-      setFormError('Inserisci il Nome del Gioco.')
-      return
-    }
-    if (isNaN(parsedPrice) || parsedPrice <= 0) {
-      setFormError('Inserisci un prezzo valido (es. 45.00).')
-      return
-    }
-    if (!paymentMethod) {
-      setFormError('Seleziona come intendi pagare (PayPal 🅿️ o Contanti 💵).')
-      return
-    }
-
-    setFormError('')
-
-    // Memorizza il nome passeggero nel Local Storage per i successivi imbarchi
-    if (onSavePassengerName && trimmedPassenger !== savedPassengerName) {
-      onSavePassengerName(trimmedPassenger)
-    }
-
-    // Calcolo automatico prezzo scontato e risparmio: per Dragonstore inserimento Prezzo di Listino con sconto base 0% (il 32% si applica dinamicamente al raggiungimento dei 300€ o forzato)
-    const discountToUse = isDragonstore ? null : shop.discount
-    const pricing = calculateItemPriceWithQuantity(parsedPrice, discountToUse, quantity, isDragonstore ? false : isAlreadyOnSale)
-
-    onAddItem({
-      id: `${Date.now()}-${Math.random().toString(36).substr(2, 7)}`,
-      id_negozio: shop.id,
-      nome_utente: trimmedPassenger,
-      nome_gioco: trimmedGame,
-      url: gameUrl.trim() || '',
-      quantita: pricing.quantity,
-      prezzo: pricing.finalPrice,
-      prezzo_listino_unitario: parsedPrice,
-      prezzo_listino_totale: Number((parsedPrice * quantity).toFixed(2)),
-      risparmio: pricing.savings || 0,
-      is_offerta_sito: isDragonstore ? false : pricing.isAlreadyOnSale,
-      discount_badge: isDragonstore ? null : pricing.discountBadge,
-      metodo_pagamento: paymentMethod,
-      created_at: new Date().toISOString(),
-    })
-
-    setJustAdded(true)
-    setTimeout(() => setJustAdded(false), 1400)
-    setGameName('')
-    setGameUrl('')
-    setRawPriceInput('')
-    setQuantity(1)
-    setIsAlreadyOnSale(false)
-    setPaymentMethod('Contanti')
-  }
 
   // REQUISITO 4: Condivisione WhatsApp, salvataggio profilo e reset carrello Gate
   const handleShareWhatsApp = async () => {
@@ -806,272 +716,34 @@ export function GateAccordionItem({
             </div>
           )}
 
-          {/* 2. REQUISITO 3: Form di Check-in Gioco */}
-          <form onSubmit={handleSubmit} className={`space-y-3.5 p-4 rounded-xl border ${
-            isNightMode ? 'bg-[#0f172a] border-white/10 text-white' : 'bg-slate-50 border-sky-200/60'
-          }`}>
-            {/* REQUISITO 1: Alert Ultima Chiamata (solo quando pronto naturalmente e non forzato) */}
-            {isPronto && !ordineForzato && (
-              <div className={`w-full max-w-full box-border p-3 rounded-xl border font-bold text-xs sm:text-sm flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left shadow-xs overflow-hidden ${
-                isNightMode
-                  ? 'bg-[#f59e0b]/15 border-[#f59e0b]/50 text-[#f59e0b] animate-departure-pulse'
-                  : 'bg-yellow-200 border-yellow-300 text-gray-800 animate-departure-pulse'
-              }`}>
-                <div className="flex items-center justify-center sm:justify-start gap-2 min-w-0 max-w-full flex-1">
-                  <span className="text-base shrink-0">📢</span>
-                  <span className="break-words leading-tight">Ultima chiamata d'imbarco! Aggiungi i tuoi giochi prima che l'aereo parta</span>
-                </div>
-                {subtotal < threshold && (
-                  <button
-                    type="button"
-                    disabled={isGateEmpty}
-                    onClick={handleToggleForce}
-                    className={`self-center sm:self-auto mx-auto sm:mx-0 px-3 py-2 rounded-lg text-xs font-black shadow-2xs whitespace-nowrap transition-all flex items-center justify-center ${
-                      isGateEmpty
-                        ? 'opacity-50 grayscale cursor-not-allowed bg-slate-300 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
-                        : 'bg-orange-500 hover:bg-orange-600 text-white cursor-pointer active:scale-95'
-                    }`}
-                    title={isGateEmpty ? 'Imbarca prima un gioco al Gate per attivare il Volo Forzato' : undefined}
-                  >
-                    🚀 Forza Ordine
-                  </button>
-                )}
-              </div>
-            )}
-
-            <div className={`text-xs sm:text-sm font-black flex items-center gap-1.5 ${
-              isNightMode ? 'text-white' : 'text-slate-800'
+          {/* Alert Ultima Chiamata (solo quando pronto naturalmente e non forzato) */}
+          {isPronto && !ordineForzato && (
+            <div className={`w-full max-w-full box-border p-3 rounded-xl border font-bold text-xs sm:text-sm flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left shadow-xs overflow-hidden mb-3 ${
+              isNightMode
+                ? 'bg-[#f59e0b]/15 border-[#f59e0b]/50 text-[#f59e0b] animate-departure-pulse'
+                : 'bg-yellow-200 border-yellow-300 text-gray-800 animate-departure-pulse'
             }`}>
-              <Plus className={`w-4 h-4 stroke-[3] ${isNightMode ? 'text-[#f59e0b]' : 'text-blue-600'}`} />
-              <span>Imbarca un gioco al Gate {shop.name}</span>
-            </div>
-
-            {/* RIGA 1 (Chi e Cosa): Nome Passeggero & Nome Gioco */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <label htmlFor={`passenger-${shop.id}`} className={`block text-xs font-semibold mb-1 ${
-                  isNightMode ? 'text-slate-300' : 'text-slate-700'
-                }`}>
-                  Nome Passeggero
-                </label>
-                <div className="relative">
-                  <input
-                    id={`passenger-${shop.id}`}
-                    type="text"
-                    value={passengerName}
-                    onChange={(e) => {
-                      setPassengerName(e.target.value)
-                      if (onSavePassengerName) onSavePassengerName(e.target.value)
-                    }}
-                    placeholder="Nome del passeggero (es. Marco)"
-                    className="w-full bg-white/60 dark:bg-white/5 backdrop-blur-md border border-slate-200/80 dark:border-white/10 rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400/60 transition-all shadow-sm font-medium"
-                  />
-                  <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                </div>
+              <div className="flex items-center justify-center sm:justify-start gap-2 min-w-0 max-w-full flex-1">
+                <span className="text-base shrink-0">📢</span>
+                <span className="break-words leading-tight">Ultima chiamata d'imbarco! Usa il tasto + in basso per aggiungere i tuoi giochi</span>
               </div>
-
-              <div>
-                <label htmlFor={`game-${shop.id}`} className={`block text-xs font-semibold mb-1 ${
-                  isNightMode ? 'text-slate-300' : 'text-slate-700'
-                }`}>
-                  Nome del Gioco
-                </label>
-                <input
-                  id={`game-${shop.id}`}
-                  type="text"
-                  value={gameName}
-                  onChange={(e) => setGameName(e.target.value)}
-                  placeholder="Es. Scythe, Terraforming Mars..."
-                  className="w-full bg-white/60 dark:bg-white/5 backdrop-blur-md border border-slate-200/80 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400/60 transition-all shadow-sm font-medium"
-                />
-              </div>
-            </div>
-
-            {/* RIGA 2 (L'URL): Link Store intera riga */}
-            <div className="col-span-full mt-1">
-              <label htmlFor={`game-url-${shop.id}`} className={`block text-xs font-semibold mb-1 ${
-                isNightMode ? 'text-slate-300' : 'text-slate-700'
-              }`}>
-                Link del negozio (opzionale)
-              </label>
-              <input
-                id={`game-url-${shop.id}`}
-                type="url"
-                value={gameUrl}
-                onChange={(e) => setGameUrl(e.target.value)}
-                placeholder="🔗 Incolla qui il link del gioco..."
-                className="w-full bg-white/60 dark:bg-white/5 backdrop-blur-md border border-slate-200/80 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400/60 transition-all shadow-sm"
-              />
-            </div>
-
-            {/* RIGA 3 (I Numeri): Prezzo Listino & Quantità affiancati */}
-            <div className="grid grid-cols-2 gap-3 mt-1">
-              <div>
-                <label htmlFor={`price-${shop.id}`} className={`block text-xs font-semibold mb-1 ${
-                  isNightMode ? 'text-slate-300' : 'text-slate-700'
-                }`}>
-                  Prezzo di listino (€)
-                </label>
-                <div className="relative">
-                  <input
-                    id={`price-${shop.id}`}
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    value={rawPriceInput}
-                    onChange={(e) => setRawPriceInput(e.target.value)}
-                    placeholder={isDragonstore ? '50.00 (listino)' : '50.00'}
-                    className="w-full bg-white/60 dark:bg-white/5 backdrop-blur-md border border-slate-200/80 dark:border-white/10 rounded-xl pl-4 pr-8 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400/60 transition-all shadow-sm font-mono-code font-bold"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs select-none">
-                    €
-                  </span>
-                </div>
-                {isDragonstore && (
-                  <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1 font-bold">
-                    * Inserisci il prezzo di listino (prezzo pieno 0% base). Al raggiungimento dei 300€ (o con Forza Ordine) si attiva automaticamente il -32% a cascata.
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor={`qty-${shop.id}`} className={`block text-xs font-semibold mb-1 ${
-                  isNightMode ? 'text-slate-300' : 'text-slate-700'
-                }`}>
-                  Quantità
-                </label>
-                <select
-                  id={`qty-${shop.id}`}
-                  value={quantity}
-                  onChange={(e) => setQuantity(Number(e.target.value))}
-                  className="w-full bg-white/60 dark:bg-white/5 backdrop-blur-md border border-slate-200/80 dark:border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400/60 transition-all shadow-sm font-bold text-center cursor-pointer"
+              {subtotal < threshold && (
+                <button
+                  type="button"
+                  disabled={isGateEmpty}
+                  onClick={handleToggleForce}
+                  className={`self-center sm:self-auto mx-auto sm:mx-0 px-3 py-2 rounded-lg text-xs font-black shadow-2xs whitespace-nowrap transition-all flex items-center justify-center ${
+                    isGateEmpty
+                      ? 'opacity-50 grayscale cursor-not-allowed bg-slate-300 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                      : 'bg-orange-500 hover:bg-orange-600 text-white cursor-pointer active:scale-95'
+                  }`}
+                  title={isGateEmpty ? 'Imbarca prima un gioco al Gate per attivare il Volo Forzato' : undefined}
                 >
-                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
-                    <option key={num} value={num} className={isNightMode ? 'bg-[#0f172a] text-white' : ''}>
-                      {num}x
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* SELETTORE METODO DI PAGAMENTO: "Come vorrai pagare?" */}
-            <div>
-              <label className={`block text-sm font-semibold mb-1.5 ${
-                isNightMode ? 'text-slate-200' : 'text-slate-700'
-              }`}>
-                Come vorrai pagare? <span className="text-rose-500 font-bold">*</span>
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {PAYMENT_OPTIONS.map((opt) => {
-                  const isSelected = paymentMethod === opt.id
-                  return (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      onClick={() => {
-                        setPaymentMethod(opt.id)
-                        if (formError.includes('pagare') || formError.includes('pagamento')) setFormError('')
-                      }}
-                      className={`btn-aviation flex-1 min-w-[95px] py-2 px-3 rounded-full text-xs sm:text-sm font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer select-none ${
-                        isSelected
-                          ? `${opt.activeColor} ring-2 ring-offset-1 ring-[#f59e0b] scale-[1.02]`
-                          : isNightMode
-                          ? 'bg-[#1e293b] text-slate-200 border-slate-700 hover:border-[#f59e0b] hover:text-white'
-                          : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-100 hover:border-slate-400'
-                      }`}
-                    >
-                      <span className="text-sm leading-none">{opt.emoji}</span>
-                      <span>{opt.label}</span>
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
-            {/* Checkbox "Già in offerta?" */}
-            <div className={`flex items-center gap-2.5 p-2.5 rounded-lg border cursor-pointer ${
-              isNightMode ? 'bg-[#1e293b] border-slate-700 text-white' : 'bg-white border-slate-200'
-            }`}>
-              <input
-                id={`sale-${shop.id}`}
-                type="checkbox"
-                checked={isAlreadyOnSale}
-                onChange={(e) => setIsAlreadyOnSale(e.target.checked)}
-                className="w-4 h-4 rounded text-[#f59e0b] focus:ring-[#f59e0b] border-slate-300 cursor-pointer accent-[#f59e0b] shrink-0"
-              />
-              <label htmlFor={`sale-${shop.id}`} className={`text-xs font-bold cursor-pointer select-none ${
-                isNightMode ? 'text-slate-200' : 'text-slate-800'
-              }`}>
-                Già in offerta? <span className={isNightMode ? 'text-slate-400 font-normal' : 'text-slate-500 font-normal'}>(Nessun ulteriore sconto convenzione)</span>
-              </label>
-            </div>
-
-            {/* REQUISITO 3: Calcolo Automatico del Prezzo Scontato e del RISPARMIO in tempo reale */}
-            {rawPriceInput && !isNaN(parseFloat(String(rawPriceInput).replace(',', '.'))) && parseFloat(String(rawPriceInput).replace(',', '.')) > 0 && (() => {
-              const previewPrice = parseFloat(String(rawPriceInput).replace(',', '.'))
-              const previewInfo = calculateItemPriceWithQuantity(previewPrice, shop.discount, quantity, isAlreadyOnSale)
-              return (
-                <div className={`p-3 rounded-xl border text-xs font-black flex flex-wrap items-center justify-between gap-2 shadow-2xs animate-ticket-pop-in ${
-                  isNightMode ? 'bg-[#1e293b] border-[#f59e0b]/50 text-white' : 'bg-blue-50 border-blue-200 text-slate-900'
-                }`}>
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <Sparkles className={`w-4 h-4 ${isNightMode ? 'text-[#f59e0b]' : 'text-blue-600'} shrink-0`} />
-                    <span>Prezzo Calcolato: <strong className={`text-sm font-mono-code ${isNightMode ? 'text-[#f59e0b]' : 'text-blue-900'}`}>{previewInfo.finalPrice.toFixed(2)}€</strong></span>
-                    {previewInfo.discountBadge && !previewInfo.isAlreadyOnSale && (
-                      <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold ${
-                        isNightMode ? 'bg-[#f59e0b] text-slate-950' : 'bg-blue-600 text-white'
-                      }`}>
-                        {previewInfo.discountBadge}
-                      </span>
-                    )}
-                  </div>
-                  {previewInfo.savings > 0 ? (
-                    <span className={`font-extrabold px-2.5 py-1 rounded-md border ${
-                      isNightMode ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/50' : 'text-emerald-700 bg-white border-emerald-300'
-                    }`}>
-                      💰 Risparmio: <strong>+{previewInfo.savings.toFixed(2)}€</strong>
-                    </span>
-                  ) : previewInfo.isAlreadyOnSale ? (
-                    <span className="text-amber-800 font-medium bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                      🏷️ Prezzo fisso offerta sito
-                    </span>
-                  ) : null}
-                </div>
-              )
-            })()}
-
-            {formError && (
-              <p className="text-xs text-rose-600 font-bold flex items-center gap-1.5 p-2 rounded-lg bg-rose-50 border border-rose-200">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                {formError}
-              </p>
-            )}
-
-            {/* Bottone Imbarca Gioco */}
-            <button
-              type="submit"
-              className={`w-full min-h-12 py-3 px-6 rounded-xl font-black text-sm flex items-center justify-center gap-2 btn-aviation shadow-sm cursor-pointer transition-all ${
-                justAdded
-                  ? 'bg-emerald-600 text-white'
-                  : isNightMode
-                  ? 'bg-[#f59e0b] hover:bg-amber-400 text-slate-950 font-black shadow-[0_0_12px_rgba(245,158,11,0.4)]'
-                  : 'bg-blue-600 hover:bg-blue-700 text-white'
-              }`}
-            >
-              {justAdded ? (
-                <>
-                  <Check className="w-4 h-4 stroke-[3]" />
-                  <span>Gioco Imbarcato al Gate! ✈️</span>
-                </>
-              ) : (
-                <>
-                  <Plane className="w-4 h-4 stroke-[2.5]" />
-                  <span>Imbarca Gioco al Gate</span>
-                </>
+                  🚀 Forza Ordine
+                </button>
               )}
-            </button>
-          </form>
+            </div>
+          )}
 
           {/* REQUISITO 2: UN SOLO blocco di testo pulito e chiaro immediatamente prima della distinta */}
           {ordineForzato && (

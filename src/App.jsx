@@ -1,6 +1,8 @@
 import { supabase } from './supabaseClient.js'
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { AirportHeader } from './components/AirportHeader.jsx'
+import { FloatingBottomBar } from './components/FloatingBottomBar.jsx'
+import { NewLuggageModal } from './components/NewLuggageModal.jsx'
 import { HangarPrevenditeModal } from './components/HangarPrevenditeModal.jsx'
 import { Gates } from './components/Gates.jsx'
 import { GateAccordionItem } from './components/GateAccordionItem.jsx'
@@ -390,6 +392,8 @@ export function App() {
 
   // REQUISITO: Stato Modale "Registro di Volo" (Storico Ordini)
   const [isFlightHistoryOpen, setIsFlightHistoryOpen] = useState(false)
+  // Stato Modale Globale Imbarco Nuovo Bagaglio / Prevendita (+)
+  const [isNewLuggageOpen, setIsNewLuggageOpen] = useState(false)
 
   // Registro di Volo (Storico Ordini) persistente in LocalStorage
   const [flightHistory, setFlightHistory] = useState(() => {
@@ -1405,8 +1409,20 @@ export function App() {
         dbStatus={dbStatus}
       />
 
-      {/* Contenitore Principale Terminal con padding-top compatto per non finire coperto dall'header fisso */}
-      <main className="relative z-10 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 pb-8 pt-[140px] sm:pt-[134px] flex-1 flex flex-col box-border">
+      {/* Contenitore Principale Terminal con padding-top compatto e pb-[110px] per la Bottom Bar fluttuante */}
+      <main className="relative z-10 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 pb-[110px] sm:pb-[120px] pt-[140px] sm:pt-[134px] flex-1 flex flex-col box-border">
+        {/* REQUISITO: Modale Globale Imbarco Nuovo Bagaglio / Prevendita (+) */}
+        <NewLuggageModal
+          isOpen={isNewLuggageOpen}
+          onClose={() => setIsNewLuggageOpen(false)}
+          shops={shops}
+          initialShopId={openGateId}
+          savedPassengerName={savedPassengerName}
+          onAddItem={handleAddItem}
+          onAddPrevendita={handleAddPrevendita}
+          isNightMode={isNightMode}
+        />
+
         {/* REQUISITO: Modale Hangar Prevendite */}
         <HangarPrevenditeModal
           isOpen={isHangarOpen}
@@ -1501,6 +1517,17 @@ export function App() {
         onUndo={handleUndoBlackBox}
         onDismiss={handleDismissBlackBox}
         duration={5000}
+        isNightMode={isNightMode}
+      />
+
+      {/* REQUISITO: Floating Bottom Bar (iOS Liquid Glass Dock Bar) */}
+      <FloatingBottomBar
+        hangarCount={prevendite.length}
+        onOpenHangar={() => setIsHangarOpen(true)}
+        onOpenPassport={() => setIsPassportOpen(true)}
+        onOpenNewLuggage={() => setIsNewLuggageOpen(true)}
+        onOpenHistory={() => setIsFlightHistoryOpen(true)}
+        onOpenManuals={() => setIsBriefingOpen(true)}
         isNightMode={isNightMode}
       />
 
