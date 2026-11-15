@@ -12,6 +12,8 @@ import { GateDetailModal } from './GateDetailModal.jsx'
 export function Gates({
   shops = [],
   cartItems = [],
+  openGateId = null,
+  onToggleGate,
   savedPassengerName = '',
   onSavePassengerName,
   onAddItem,
@@ -25,7 +27,24 @@ export function Gates({
   isNightMode = false,
 }) {
   // Pattern Master-Detail: memorizza lo shop attualmente aperto nel dettaglio
-  const [selectedShopId, setSelectedShopId] = useState(null)
+  const [selectedShopId, setSelectedShopId] = useState(openGateId)
+
+  // Sincronizza lo stato con openGateId passato dal componente genitore (App)
+  // Questo assicura che se la barra di navigazione o un'altra modale resetta openGateId a null,
+  // la modale del Gate si chiuda istantaneamente senza click a vuoto.
+  React.useEffect(() => {
+    setSelectedShopId(openGateId)
+  }, [openGateId])
+
+  const handleSelectShop = (shopId) => {
+    setSelectedShopId(shopId)
+    if (onToggleGate) onToggleGate(shopId)
+  }
+
+  const handleCloseDetail = () => {
+    setSelectedShopId(null)
+    if (onToggleGate) onToggleGate(null)
+  }
 
   const activeShop = useMemo(() => {
     return shops.find((s) => s.id === selectedShopId) || null
@@ -47,7 +66,7 @@ export function Gates({
               key={shop.id}
               shop={shop}
               items={storeItems}
-              onClick={() => setSelectedShopId(shop.id)}
+              onClick={() => handleSelectShop(shop.id)}
               isNightMode={isNightMode}
             />
           )
@@ -59,7 +78,7 @@ export function Gates({
         shop={activeShop}
         items={activeShopItems}
         isOpen={Boolean(activeShop)}
-        onClose={() => setSelectedShopId(null)}
+        onClose={handleCloseDetail}
         savedPassengerName={savedPassengerName}
         onSavePassengerName={onSavePassengerName}
         onAddItem={onAddItem}

@@ -395,6 +395,33 @@ export function App() {
   // Stato Modale Globale Imbarco Nuovo Bagaglio / Prevendita (+)
   const [isNewLuggageOpen, setIsNewLuggageOpen] = useState(false)
 
+  // Gestione centralizzata del cambio tab / navigazione
+  // Chiude all'istante qualsiasi modale, drawer o scheda Gate aperta e scorre fluido in cima
+  const closeAllModalsAndViews = () => {
+    setIsNewLuggageOpen(false)
+    setIsHangarOpen(false)
+    setIsPassportOpen(false)
+    setIsFlightHistoryOpen(false)
+    setIsBriefingOpen(false)
+    setOpenGateId(null)
+  }
+
+  const navigateToTab = (tab) => {
+    closeAllModalsAndViews()
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    if (tab === 'hangar') {
+      setIsHangarOpen(true)
+    } else if (tab === 'passport') {
+      setIsPassportOpen(true)
+    } else if (tab === 'newLuggage') {
+      setIsNewLuggageOpen(true)
+    } else if (tab === 'history') {
+      setIsFlightHistoryOpen(true)
+    } else if (tab === 'briefing') {
+      setIsBriefingOpen(true)
+    }
+  }
+
   // Registro di Volo (Storico Ordini) persistente in LocalStorage
   const [flightHistory, setFlightHistory] = useState(() => {
     try {
@@ -1397,9 +1424,9 @@ export function App() {
         totalGamesCount={totalGamesCount}
         totalCartAmount={totalCartAmount}
         savedPassengerName={savedPassengerName}
-        onOpenPassport={() => setIsPassportOpen(true)}
-        onOpenHistory={() => setIsFlightHistoryOpen(true)}
-        onOpenHangar={() => setIsHangarOpen(true)}
+        onOpenPassport={() => navigateToTab('passport')}
+        onOpenHistory={() => navigateToTab('history')}
+        onOpenHangar={() => navigateToTab('hangar')}
         hangarCount={prevendite.length}
         readyGatesCount={readyGatesCount}
         flightBudget={currentPassengerBudget}
@@ -1409,8 +1436,8 @@ export function App() {
         dbStatus={dbStatus}
       />
 
-      {/* Contenitore Principale Terminal con padding-top compatto e pb-[110px] per la Bottom Bar fluttuante */}
-      <main className="relative z-10 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 pb-[110px] sm:pb-[120px] pt-[140px] sm:pt-[134px] flex-1 flex flex-col box-border">
+      {/* Contenitore Principale Terminal con padding-top compatto e pb-[140px] per la Bottom Bar fluttuante */}
+      <main className="relative z-10 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 pb-[140px] sm:pb-[120px] pt-[140px] sm:pt-[134px] flex-1 flex flex-col box-border">
         {/* REQUISITO: Modale Globale Imbarco Nuovo Bagaglio / Prevendita (+) */}
         <NewLuggageModal
           isOpen={isNewLuggageOpen}
@@ -1523,11 +1550,11 @@ export function App() {
       {/* REQUISITO: Floating Bottom Bar (iOS Liquid Glass Dock Bar) */}
       <FloatingBottomBar
         hangarCount={prevendite.length}
-        onOpenHangar={() => setIsHangarOpen(true)}
-        onOpenPassport={() => setIsPassportOpen(true)}
-        onOpenNewLuggage={() => setIsNewLuggageOpen(true)}
-        onOpenHistory={() => setIsFlightHistoryOpen(true)}
-        onOpenManuals={() => setIsBriefingOpen(true)}
+        onOpenHangar={() => navigateToTab('hangar')}
+        onOpenPassport={() => navigateToTab('passport')}
+        onOpenNewLuggage={() => navigateToTab('newLuggage')}
+        onOpenHistory={() => navigateToTab('history')}
+        onOpenManuals={() => navigateToTab('briefing')}
         isNightMode={isNightMode}
       />
 

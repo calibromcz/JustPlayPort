@@ -13,22 +13,23 @@ export function FloatingBottomBar({
     <nav
       style={{
         position: 'fixed',
-        bottom: '18px',
+        bottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
         left: '50%',
         transform: 'translateX(-50%)',
-        zIndex: 1000,
-        width: 'calc(100% - 28px)',
-        maxWidth: '450px',
+        zIndex: 40,
+        width: 'calc(100% - 24px)',
+        maxWidth: '480px',
         height: '66px',
-        borderRadius: '999px',
-        padding: '0 10px',
+        borderRadius: '24px',
+        padding: '0 8px',
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
         alignItems: 'center',
         justifyContent: 'space-around',
-        background: isNightMode ? 'rgba(28, 28, 30, 0.82)' : 'rgba(255, 255, 255, 0.82)',
-        backdropFilter: 'blur(24px) saturate(190%)',
-        WebkitBackdropFilter: 'blur(24px) saturate(190%)',
-        border: isNightMode ? '1px solid rgba(255, 255, 255, 0.14)' : '1px solid rgba(0, 0, 0, 0.08)',
-        boxShadow: isNightMode ? '0 12px 32px rgba(0, 0, 0, 0.5)' : '0 12px 32px rgba(0, 0, 0, 0.12)',
+        background: isNightMode ? 'rgba(25, 25, 28, 0.75)' : 'rgba(255, 255, 255, 0.72)',
+        backdropFilter: 'blur(20px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+        border: isNightMode ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid rgba(255, 255, 255, 0.35)',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
       }}
       className="flex md:hidden"
       aria-label="Barra di navigazione principale"
@@ -62,33 +63,34 @@ export function FloatingBottomBar({
         <span style={{ fontSize: '11px', fontWeight: 600 }}>Passaporto</span>
       </button>
 
-      {/* 3. TASTO CENTRALE '+' (Nuovo Imbarco - Esclusivo Mobile) */}
-      <button
-        type="button"
-        onClick={onOpenNewLuggage}
-        style={{
-          width: '50px',
-          height: '50px',
-          borderRadius: '50%',
-          background: 'linear-gradient(135deg, #007AFF, #0051D5)',
-          color: '#fff',
-          fontSize: '28px',
-          fontWeight: 500,
-          boxShadow: '0 6px 18px rgba(0, 122, 255, 0.4)',
-          border: 'none',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transition: 'transform 0.15s ease',
-          margin: '0 4px',
-          flexShrink: 0,
-        }}
-        className="cursor-pointer active:scale-90 hover:scale-105"
-        title="Imbarca Nuovo Gioco al Gate"
-        aria-label="Nuovo Imbarco"
-      >
-        <Plus className="w-7 h-7 stroke-[2.6]" />
-      </button>
+      {/* 3. TASTO CENTRALE '+' (Aggiungi al Gate / Nuovo Imbarco - Elevato FAB con z-index: 45) */}
+      <div className="flex items-center justify-center relative -top-3 px-1" style={{ zIndex: 45 }}>
+        <button
+          type="button"
+          onClick={onOpenNewLuggage}
+          style={{
+            width: '54px',
+            height: '54px',
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #007AFF, #0051D5)',
+            color: '#fff',
+            fontSize: '28px',
+            fontWeight: 500,
+            boxShadow: '0 8px 24px rgba(0, 122, 255, 0.45)',
+            border: '2px solid rgba(255, 255, 255, 0.8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'transform 0.15s ease',
+            flexShrink: 0,
+          }}
+          className="cursor-pointer active:scale-90 hover:scale-105"
+          title="Aggiungi Gioco al Gate"
+          aria-label="Aggiungi al Gate"
+        >
+          <Plus className="w-7 h-7 stroke-[2.8]" />
+        </button>
+      </div>
 
       {/* 4. REGISTRO */}
       <button
