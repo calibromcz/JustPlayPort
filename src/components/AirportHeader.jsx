@@ -1,10 +1,17 @@
 import React from 'react'
-import { Moon, Sun, Luggage, Compass } from 'lucide-react'
+import { BookOpen, ClipboardList, Moon, Sun, Luggage, Compass, Package } from 'lucide-react'
 
 export function AirportHeader({
   totalGamesCount = 0,
   totalCartAmount = 0,
+  savedPassengerName = '',
+  onOpenPassport,
+  onOpenHistory,
+  onOpenHangar,
+  hangarCount = 0,
   readyGatesCount = 0,
+  flightBudget = 0,
+  passengerPersonalSpent = 0,
   isNightMode = false,
   onToggleNightMode,
   dbStatus = { online: false, error: null },
@@ -63,7 +70,68 @@ export function AirportHeader({
         </button>
       </div>
 
-      {/* RIGA 2: I 3 CONTATORI COMPATTI A PILLOLA */}
+      {/* RIGA 2 (SOLO DESKTOP md:flex): I 4 TASTI CLASSICI (Manuali, Passaporto, Registro, Hangar) */}
+      <div className="hidden md:flex flex-row items-center justify-center gap-3 w-full py-1">
+        {/* Pulsante Manuali */}
+        <a
+          href="https://boardrulesit.netlify.app/"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Manuali dei Voli"
+          style={{ fontSize: '13px', padding: '6px 14px' }}
+          className="shrink-0 whitespace-nowrap bg-white dark:bg-white/10 border border-gray-200/80 dark:border-white/10 rounded-full font-semibold shadow-xs hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 active:translate-y-0 flex items-center gap-1.5 text-slate-800 dark:text-slate-100 cursor-pointer"
+          title="Consulta i Manuali e Regolamenti"
+        >
+          <BookOpen className="w-4 h-4 text-blue-600 dark:text-cyan-400 shrink-0" />
+          <span>Manuali</span>
+        </a>
+
+        {/* Pulsante Passaporto */}
+        <button
+          type="button"
+          onClick={onOpenPassport}
+          aria-label="Passaporto Ludico"
+          style={{ fontSize: '13px', padding: '6px 14px' }}
+          className="shrink-0 whitespace-nowrap bg-white dark:bg-white/10 border border-gray-200/80 dark:border-white/10 rounded-full font-semibold shadow-xs hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 active:translate-y-0 flex items-center gap-1.5 text-slate-800 dark:text-slate-100 cursor-pointer"
+          title="Apri il Passaporto Ludico"
+        >
+          <span className="text-sm leading-none">🛂</span>
+          <span>Passaporto</span>
+        </button>
+
+        {/* Pulsante Registro */}
+        <button
+          type="button"
+          onClick={onOpenHistory}
+          aria-label="Registro dei Voli"
+          style={{ fontSize: '13px', padding: '6px 14px' }}
+          className="shrink-0 whitespace-nowrap bg-white dark:bg-white/10 border border-gray-200/80 dark:border-white/10 rounded-full font-semibold shadow-xs hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 active:translate-y-0 flex items-center gap-1.5 text-slate-800 dark:text-slate-100 cursor-pointer"
+          title="Registro dei Voli"
+        >
+          <ClipboardList className="w-4 h-4 text-blue-600 dark:text-cyan-400 shrink-0" />
+          <span>Registro</span>
+        </button>
+
+        {/* Pulsante Hangar Prevendite */}
+        <button
+          type="button"
+          onClick={onOpenHangar}
+          aria-label="Hangar Prevendite"
+          style={{ fontSize: '13px', padding: '6px 14px' }}
+          className="shrink-0 whitespace-nowrap bg-white dark:bg-white/10 border border-gray-200/80 dark:border-white/10 rounded-full font-semibold shadow-xs hover:-translate-y-0.5 hover:shadow-md transition-all duration-300 active:translate-y-0 flex items-center gap-1.5 text-slate-800 dark:text-slate-100 cursor-pointer"
+          title="Apri l'Hangar delle Prevendite"
+        >
+          <Package className="w-4 h-4 text-amber-500 shrink-0" />
+          <span>Hangar</span>
+          {hangarCount > 0 && (
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-amber-500 text-white leading-none">
+              {hangarCount}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* RIGA 3: I 3 CONTATORI COMPATTI A PILLOLA */}
       <div className="flex flex-wrap justify-center items-center gap-2 w-full font-mono-code text-xs">
         {/* Pillola Bagagli al Gate */}
         <div className="inline-flex items-center gap-1.5 bg-white/70 dark:bg-white/5 backdrop-blur-md border border-white/80 dark:border-white/10 rounded-full px-3 py-1 shadow-2xs text-slate-700 dark:text-slate-300">

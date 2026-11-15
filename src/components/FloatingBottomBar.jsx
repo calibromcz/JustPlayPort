@@ -22,7 +22,6 @@ export function FloatingBottomBar({
         height: '66px',
         borderRadius: '999px',
         padding: '0 10px',
-        display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-around',
         background: isNightMode ? 'rgba(28, 28, 30, 0.82)' : 'rgba(255, 255, 255, 0.82)',
@@ -31,6 +30,7 @@ export function FloatingBottomBar({
         border: isNightMode ? '1px solid rgba(255, 255, 255, 0.14)' : '1px solid rgba(0, 0, 0, 0.08)',
         boxShadow: isNightMode ? '0 12px 32px rgba(0, 0, 0, 0.5)' : '0 12px 32px rgba(0, 0, 0, 0.12)',
       }}
+      className="flex md:hidden"
       aria-label="Barra di navigazione principale"
     >
       {/* 1. HANGAR */}
@@ -62,7 +62,7 @@ export function FloatingBottomBar({
         <span style={{ fontSize: '11px', fontWeight: 600 }}>Passaporto</span>
       </button>
 
-      {/* 3. TASTO CENTRALE '+' (Nuovo Imbarco - Esclusivo Mobile < 768px) */}
+      {/* 3. TASTO CENTRALE '+' (Nuovo Imbarco - Esclusivo Mobile) */}
       <button
         type="button"
         onClick={onOpenNewLuggage}
@@ -76,13 +76,14 @@ export function FloatingBottomBar({
           fontWeight: 500,
           boxShadow: '0 6px 18px rgba(0, 122, 255, 0.4)',
           border: 'none',
+          display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           transition: 'transform 0.15s ease',
           margin: '0 4px',
           flexShrink: 0,
         }}
-        className="flex md:hidden cursor-pointer active:scale-90 hover:scale-105"
+        className="cursor-pointer active:scale-90 hover:scale-105"
         title="Imbarca Nuovo Gioco al Gate"
         aria-label="Nuovo Imbarco"
       >

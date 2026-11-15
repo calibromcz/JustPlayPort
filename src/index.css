@@ -256,4 +256,12 @@ html.dark ::-webkit-scrollbar-thumb:hover {
   background: #f59e0b;
 }
 
+/* Nascondi la Floating Bottom Bar su Desktop */
+@media (min-width: 768px) {
+  .floating-bottom-bar,
+  nav[aria-label="Barra di navigazione principale"] {
+    display: none !important;
+  }
+}
+
 
