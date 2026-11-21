@@ -34,6 +34,16 @@ export async function exportGateExcel(shop, items = [], orderRef = null, orderDa
   const yearStr = String(now.getFullYear())
   const dateFormattedHyphen = `${dayStr}-${monthStr}-${yearStr}`
 
+  // Percentuale sconto convenzione del negozio per fallback se listino mancante
+  let shopDiscountPct = 0
+  if (shop?.discount) {
+    const match = String(shop.discount).match(/(\d+)\s*%/)
+    if (match) shopDiscountPct = parseInt(match[1], 10)
+  }
+  if (isDragonstore) {
+    shopDiscountPct = 32
+  }
+
   // =========================================================================
   // REQUISITO 3: MODULO EXCEL / NUMBERS DEDICATO SOLO AL GATE "DRAGON STORE"
   // =========================================================================
@@ -54,18 +64,28 @@ export async function exportGateExcel(shop, items = [], orderRef = null, orderDa
             ? it.price
             : parseFloat(it.prezzo || it.price) || 0
 
-      const listPriceUnit =
-        it.prezzo_listino_unitario !== undefined && it.prezzo_listino_unitario !== null
-          ? Number(it.prezzo_listino_unitario) || rawFinalPrice
-          : it.prezzo_listino !== undefined && it.prezzo_listino !== null
-            ? Number(it.prezzo_listino) || rawFinalPrice
-            : it.prezzo_listino_totale !== undefined && qty > 0
-              ? Number(it.prezzo_listino_totale) / qty
-              : rawFinalPrice
+      const isOffer = Boolean(it.is_offerta_sito || it.is_already_on_sale)
+
+      let fallbackListUnit = rawFinalPrice
+      if (!isOffer && shopDiscountPct > 0 && shopDiscountPct < 100) {
+        fallbackListUnit = Number((rawFinalPrice / (1 - shopDiscountPct / 100)).toFixed(2))
+      }
+
+      let listPriceUnit = fallbackListUnit
+      if (it.prezzo_listino_unitario !== undefined && it.prezzo_listino_unitario !== null) {
+        listPriceUnit = Number(it.prezzo_listino_unitario) || fallbackListUnit
+      } else if (it.prezzo_listino !== undefined && it.prezzo_listino !== null) {
+        listPriceUnit = Number(it.prezzo_listino) || fallbackListUnit
+      } else if (it.prezzo_listino_totale !== undefined && it.prezzo_listino_totale !== null && qty > 0) {
+        listPriceUnit = Number(it.prezzo_listino_totale) / qty
+      }
+
+      if (!isOffer && shopDiscountPct > 0 && Math.abs(listPriceUnit - rawFinalPrice) < 0.01) {
+        listPriceUnit = fallbackListUnit
+      }
 
       const totalListPrice = Number((listPriceUnit * qty).toFixed(2))
       const totalPrice = Number((rawFinalPrice * qty).toFixed(2))
-      const isOffer = it.is_offerta_sito || Boolean(it.is_already_on_sale)
 
       const key = `${passenger}:::${title}:::${payment}`
       if (dragonMap.has(key)) {
@@ -214,16 +234,27 @@ export async function exportGateExcel(shop, items = [], orderRef = null, orderDa
           ? it.price
           : parseFloat(it.prezzo || it.price) || 0
 
-    const listPriceUnit =
-      it.prezzo_listino_unitario !== undefined && it.prezzo_listino_unitario !== null
-        ? Number(it.prezzo_listino_unitario) || rawFinalPrice
-        : it.prezzo_listino !== undefined && it.prezzo_listino !== null
-          ? Number(it.prezzo_listino) || rawFinalPrice
-          : it.prezzo_listino_totale !== undefined && (it.quantita || 1) > 0
-            ? Number(it.prezzo_listino_totale) / (it.quantita || 1)
-            : rawFinalPrice
-
     const qty = Number(it.quantita || it.quantity || 1) || 1
+    const isOffer = Boolean(it.is_offerta_sito || it.is_already_on_sale)
+
+    let fallbackListUnit = rawFinalPrice
+    if (!isOffer && shopDiscountPct > 0 && shopDiscountPct < 100) {
+      fallbackListUnit = Number((rawFinalPrice / (1 - shopDiscountPct / 100)).toFixed(2))
+    }
+
+    let listPriceUnit = fallbackListUnit
+    if (it.prezzo_listino_unitario !== undefined && it.prezzo_listino_unitario !== null) {
+      listPriceUnit = Number(it.prezzo_listino_unitario) || fallbackListUnit
+    } else if (it.prezzo_listino !== undefined && it.prezzo_listino !== null) {
+      listPriceUnit = Number(it.prezzo_listino) || fallbackListUnit
+    } else if (it.prezzo_listino_totale !== undefined && it.prezzo_listino_totale !== null && qty > 0) {
+      listPriceUnit = Number(it.prezzo_listino_totale) / qty
+    }
+
+    if (!isOffer && shopDiscountPct > 0 && Math.abs(listPriceUnit - rawFinalPrice) < 0.01) {
+      listPriceUnit = fallbackListUnit
+    }
+
     const listPriceTot = Number((listPriceUnit * qty).toFixed(2))
     const finalPriceTot = Number((rawFinalPrice * qty).toFixed(2))
 

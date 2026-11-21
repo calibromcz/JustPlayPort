@@ -697,6 +697,35 @@ export function App() {
 
             const targetShopId = matchedShop ? matchedShop.id : (b.gate_id || 'playbazar')
             const prezzoFinale = parseFloat(b.prezzo_finale) || 0
+            const quantitaVal = b.quantita || 1
+
+            // Determinazione sconto negozio per calcolo listino originario se mancante
+            let discountPercent = 0
+            if (matchedShop?.discount) {
+              const m = String(matchedShop.discount).match(/(\d+)\s*%/)
+              if (m) discountPercent = parseInt(m[1], 10)
+            } else if (targetShopId === 'dragonstore') {
+              discountPercent = 32
+            }
+
+            // Calcolo prezzo listino di fallback se mancante o uguale al prezzo scontato
+            let fallbackListinoUnit = prezzoFinale
+            if (discountPercent > 0 && discountPercent < 100) {
+              fallbackListinoUnit = Number((prezzoFinale / (1 - discountPercent / 100)).toFixed(2))
+            }
+
+            const rawListinoUnit =
+              b.prezzo_listino_unitario !== undefined && b.prezzo_listino_unitario !== null
+                ? Number(b.prezzo_listino_unitario)
+                : b.prezzo_listino !== undefined && b.prezzo_listino !== null
+                  ? Number(b.prezzo_listino)
+                  : b.prezzo_listino_totale !== undefined && b.prezzo_listino_totale !== null && quantitaVal > 0
+                    ? Number(b.prezzo_listino_totale) / quantitaVal
+                    : fallbackListinoUnit
+
+            const listinoUnitario = rawListinoUnit > 0 ? Number(rawListinoUnit.toFixed(2)) : fallbackListinoUnit
+            const listinoTotale = Number((listinoUnitario * quantitaVal).toFixed(2))
+            const risparmioTot = Math.max(0, Number((listinoTotale - (prezzoFinale * quantitaVal)).toFixed(2)))
 
             return {
               id: b.id,
@@ -706,13 +735,14 @@ export function App() {
               nome_utente: b.nome_passeggero || 'Passeggero',
               nome_gioco: b.nome_gioco,
               url: b.url_negozio || '',
-              quantita: b.quantita || 1,
+              quantita: quantitaVal,
               prezzo: prezzoFinale,
-              prezzo_listino_unitario: prezzoFinale,
-              prezzo_listino_totale: Number((prezzoFinale * (b.quantita || 1)).toFixed(2)),
-              risparmio: 0,
+              prezzo_listino: listinoUnitario,
+              prezzo_listino_unitario: listinoUnitario,
+              prezzo_listino_totale: listinoTotale,
+              risparmio: risparmioTot,
               is_offerta_sito: false,
-              discount_badge: null,
+              discount_badge: discountPercent > 0 ? `-${discountPercent}%` : null,
               metodo_pagamento: b.metodo_pagamento || 'Contanti',
               created_at: b.created_at || new Date().toISOString(),
             }

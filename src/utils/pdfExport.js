@@ -53,6 +53,17 @@ export function incrementShopOrderReference(shopId) {
 export function groupGateItems(items = [], shop = null) {
   const groups = new Map()
 
+  // Percentuale sconto convenzione del negozio
+  let shopDiscountPct = 0
+  if (shop?.discount) {
+    const match = String(shop.discount).match(/(\d+)\s*%/)
+    if (match) shopDiscountPct = parseInt(match[1], 10)
+  }
+  const isDragonstore = shop?.id === 'dragonstore' || shop?.name?.toLowerCase().includes('dragonstore')
+  if (isDragonstore) {
+    shopDiscountPct = 32
+  }
+
   items.forEach((item) => {
     const title = (item.nome_gioco || item.title || 'Gioco').trim()
     const passenger = (item.nome_utente || item.passenger || 'Socio').trim()
@@ -66,12 +77,27 @@ export function groupGateItems(items = [], shop = null) {
         : parseFloat(item.prezzo || item.price) || 0
     const qty = Number(item.quantita || item.quantity || 1) || 1
 
-    const listPriceUnit =
-      item.prezzo_listino_unitario !== undefined
-        ? Number(item.prezzo_listino_unitario) || rawPrice
-        : item.prezzo_listino_totale !== undefined && qty > 0
-        ? Number(item.prezzo_listino_totale) / qty
-        : rawPrice
+    const isAlreadyOffer = Boolean(item.is_offerta_sito || item.is_already_on_sale)
+
+    // Fallback sicuro se listino mancante o uguale al prezzo scontato con sconto attivo
+    let fallbackUnitList = rawPrice
+    if (!isAlreadyOffer && shopDiscountPct > 0 && shopDiscountPct < 100) {
+      fallbackUnitList = Number((rawPrice / (1 - shopDiscountPct / 100)).toFixed(2))
+    }
+
+    let listPriceUnit = fallbackUnitList
+    if (item.prezzo_listino_unitario !== undefined && item.prezzo_listino_unitario !== null) {
+      listPriceUnit = Number(item.prezzo_listino_unitario) || fallbackUnitList
+    } else if (item.prezzo_listino !== undefined && item.prezzo_listino !== null) {
+      listPriceUnit = Number(item.prezzo_listino) || fallbackUnitList
+    } else if (item.prezzo_listino_totale !== undefined && item.prezzo_listino_totale !== null && qty > 0) {
+      listPriceUnit = Number(item.prezzo_listino_totale) / qty
+    }
+
+    // Se il listino risultasse ancora identico al prezzo scontato nonostante sconto negozio attivo (> 0) e non in offerta, usa fallbackUnitList
+    if (!isAlreadyOffer && shopDiscountPct > 0 && Math.abs(listPriceUnit - rawPrice) < 0.01) {
+      listPriceUnit = fallbackUnitList
+    }
 
     const listPriceTot = Number((listPriceUnit * qty).toFixed(2))
     const finalPriceTot = Number((rawPrice * qty).toFixed(2))
@@ -83,7 +109,7 @@ export function groupGateItems(items = [], shop = null) {
     } else if (listPriceTot > finalPriceTot && listPriceTot > 0) {
       const discountPct = Math.round(((listPriceTot - finalPriceTot) / listPriceTot) * 100)
       discountLabel = `-${discountPct}%`
-    } else if (item.is_offerta_sito) {
+    } else if (isAlreadyOffer) {
       discountLabel = 'Offerta'
     } else if (shop?.discount && typeof shop.discount === 'string') {
       discountLabel = shop.discount
