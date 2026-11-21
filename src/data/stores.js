@@ -5,7 +5,7 @@ export const SHOPS_DATA = [
     gate: 'Gate A-01',
     flightCode: 'JP-101',
     discount: '20%',
-    freeShipping: 49,
+    freeShipping: 100,
     ordineForzato: false,
     shippingOptions: [
       { id: 'standard', name: 'Standard', price: 4.99, isDefault: true },

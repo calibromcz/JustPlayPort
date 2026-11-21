@@ -58,8 +58,8 @@ export function NewLuggageModal({
   const selectedShop = shops.find((s) => s.id === selectedShopId) || shops[0] || {}
   const isDragonstore = selectedShop?.id === 'dragonstore' || selectedShop?.name?.toLowerCase().includes('dragonstore')
 
-  // Parsing intelligente del prezzo inserito (supporta sia singolo numero es. 49.90 che formato doppio "80 barrato 60", "80 - 60", "€ 80 barrato - € 60 vendita")
-  const parsedPriceData = parsePriceInputWithList(rawPriceInput, `${gameName} ${gameUrl}`)
+  // Parsing del prezzo di listino inserito: legge RIGOROSAMENTE e SOLTANTO il valore del campo input rawPriceInput
+  const parsedPriceData = parsePriceInputWithList(rawPriceInput)
   const parsedPrice = parsedPriceData.salePrice || 0
   const parsedListPrice = parsedPriceData.listPrice || parsedPrice
 

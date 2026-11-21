@@ -43,17 +43,17 @@ export async function exportGateExcel(shop, items = [], orderRef = null, orderDa
       typeof it.prezzo === 'number'
         ? it.prezzo
         : typeof it.price === 'number'
-        ? it.price
-        : parseFloat(it.prezzo || it.price) || 0
+          ? it.price
+          : parseFloat(it.prezzo || it.price) || 0
 
     const listPriceUnit =
       it.prezzo_listino_unitario !== undefined && it.prezzo_listino_unitario !== null
         ? Number(it.prezzo_listino_unitario) || rawFinalPrice
         : it.prezzo_listino !== undefined && it.prezzo_listino !== null
-        ? Number(it.prezzo_listino) || rawFinalPrice
-        : it.prezzo_listino_totale !== undefined && (it.quantita || 1) > 0
-        ? Number(it.prezzo_listino_totale) / (it.quantita || 1)
-        : rawFinalPrice
+          ? Number(it.prezzo_listino) || rawFinalPrice
+          : it.prezzo_listino_totale !== undefined && (it.quantita || 1) > 0
+            ? Number(it.prezzo_listino_totale) / (it.quantita || 1)
+            : rawFinalPrice
 
     const qty = Number(it.quantita || it.quantity || 1) || 1
     const listPriceTot = Number((listPriceUnit * qty).toFixed(2))
