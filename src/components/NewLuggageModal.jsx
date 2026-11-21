@@ -516,7 +516,7 @@ export function NewLuggageModal({
               ) : (
                 <>
                   <Plane className="w-5 h-5" />
-                  <span>✈️ Imbarca al Gate</span>
+                  <span>Imbarca al Gate</span>
                 </>
               )}
             </button>
