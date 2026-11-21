@@ -25,10 +25,178 @@ export async function exportGateExcel(shop, items = [], orderRef = null, orderDa
     return false
   }
 
+  const isDragonstore = shop?.id === 'dragonstore' || shop?.name?.toLowerCase().includes('dragonstore')
+
+  // DATA ODIERNA O FORMATTATA GG-MM-AAAA
+  const now = new Date()
+  const dayStr = String(now.getDate()).padStart(2, '0')
+  const monthStr = String(now.getMonth() + 1).padStart(2, '0')
+  const yearStr = String(now.getFullYear())
+  const dateFormattedHyphen = `${dayStr}-${monthStr}-${yearStr}`
+
+  // =========================================================================
+  // REQUISITO 3: MODULO EXCEL / NUMBERS DEDICATO SOLO AL GATE "DRAGON STORE"
+  // =========================================================================
+  if (isDragonstore) {
+    // Raggruppa i giochi identici per Titolo + Socio + Metodo di Pagamento + Link
+    const dragonMap = new Map()
+
+    items.forEach((it) => {
+      const title = (it.nome_gioco || it.title || it.gioco || 'Gioco').trim()
+      const passenger = (it.nome_utente || it.passenger || it.utente || it.nome || 'Socio').trim()
+      const payment = (it.metodo_pagamento || it.paymentMethod || it.pagamento || 'Contanti').trim()
+      const qty = Number(it.quantita || it.quantity || 1) || 1
+
+      const rawFinalPrice =
+        typeof it.prezzo === 'number'
+          ? it.prezzo
+          : typeof it.price === 'number'
+            ? it.price
+            : parseFloat(it.prezzo || it.price) || 0
+
+      const listPriceUnit =
+        it.prezzo_listino_unitario !== undefined && it.prezzo_listino_unitario !== null
+          ? Number(it.prezzo_listino_unitario) || rawFinalPrice
+          : it.prezzo_listino !== undefined && it.prezzo_listino !== null
+            ? Number(it.prezzo_listino) || rawFinalPrice
+            : it.prezzo_listino_totale !== undefined && qty > 0
+              ? Number(it.prezzo_listino_totale) / qty
+              : rawFinalPrice
+
+      const totalListPrice = Number((listPriceUnit * qty).toFixed(2))
+      const totalPrice = Number((rawFinalPrice * qty).toFixed(2))
+      const isOffer = it.is_offerta_sito || Boolean(it.is_already_on_sale)
+
+      const key = `${passenger}:::${title}:::${payment}`
+      if (dragonMap.has(key)) {
+        const prev = dragonMap.get(key)
+        prev.quantity += qty
+        prev.totalListPrice = Number((prev.totalListPrice + totalListPrice).toFixed(2))
+        prev.totalPrice = Number((prev.totalPrice + totalPrice).toFixed(2))
+      } else {
+        dragonMap.set(key, {
+          passenger,
+          title,
+          quantity: qty,
+          totalListPrice,
+          totalPrice,
+          payment,
+          isOffer,
+        })
+      }
+    })
+
+    // Raggruppa e ordina per Acquirente (alfabetico)
+    const sortedDragonItems = Array.from(dragonMap.values()).sort((a, b) =>
+      a.passenger.localeCompare(b.passenger, 'it', { sensitivity: 'base' })
+    )
+
+    // Colonne esatte richieste:
+    // 1. Acquirente
+    // 2. Nome del Gioco (con quantità se > 1, es. x2)
+    // 3. Prezzo di listino
+    // 4. Sconto (es. 32% oppure 0% (Offerta))
+    // 5. Prezzo da pagare
+    // 6. Stato ("Disponibile" o "Prossimamente")
+    // 7. Pagamento (es. Contanti / PayPal)
+    const dragonRows = sortedDragonItems.map((item) => {
+      const nameWithQty = item.quantity > 1 ? `${item.title} x${item.quantity}` : item.title
+      const discountText = item.isOffer ? '0% (Offerta)' : '32%'
+
+      return {
+        'Acquirente': item.passenger,
+        'Nome del Gioco': nameWithQty,
+        'Prezzo di listino': Number(item.totalListPrice.toFixed(2)),
+        'Sconto': discountText,
+        'Prezzo da pagare': Number(item.totalPrice.toFixed(2)),
+        'Stato': 'Disponibile',
+        'Pagamento': item.payment,
+      }
+    })
+
+    // Somma dei prezzi di listino e somma del Totale da Pagare
+    const sumListino = dragonRows.reduce((acc, r) => acc + (Number(r['Prezzo di listino']) || 0), 0)
+    const sumDaPagare = dragonRows.reduce((acc, r) => acc + (Number(r['Prezzo da pagare']) || 0), 0)
+
+    // Aggiungi una riga vuota alla fine e poi la riga di riepilogo
+    dragonRows.push({
+      'Acquirente': '',
+      'Nome del Gioco': '',
+      'Prezzo di listino': '',
+      'Sconto': '',
+      'Prezzo da pagare': '',
+      'Stato': '',
+      'Pagamento': '',
+    })
+
+    // Riga TOTALE:
+    // Colonna A: TOTALE
+    // Colonna C: somma Prezzo di listino
+    // Colonna E: somma Prezzo da pagare
+    dragonRows.push({
+      'Acquirente': 'TOTALE',
+      'Nome del Gioco': '',
+      'Prezzo di listino': Number(sumListino.toFixed(2)),
+      'Sconto': '',
+      'Prezzo da pagare': Number(sumDaPagare.toFixed(2)),
+      'Stato': '',
+      'Pagamento': '',
+    })
+
+    try {
+      const ws = XLSX.utils.json_to_sheet(dragonRows)
+      // Larghezze colonne richieste: [{ wch: 22 }, { wch: 38 }, { wch: 18 }, { wch: 12 }, { wch: 18 }, { wch: 16 }, { wch: 16 }]
+      ws['!cols'] = [
+        { wch: 22 }, // Acquirente
+        { wch: 38 }, // Nome del Gioco
+        { wch: 18 }, // Prezzo di listino
+        { wch: 12 }, // Sconto
+        { wch: 18 }, // Prezzo da pagare
+        { wch: 16 }, // Stato
+        { wch: 16 }, // Pagamento
+      ]
+
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, 'Dragon Store')
+
+      const filename = `Ordine_DragonStore_${dateFormattedHyphen}.xlsx`
+      XLSX.writeFile(wb, filename)
+      return true
+    } catch (err) {
+      console.error('Errore esportazione Dragon Store Excel:', err)
+      const wb = XLSX.utils.book_new()
+      const ws = XLSX.utils.json_to_sheet(dragonRows)
+      ws['!cols'] = [
+        { wch: 22 },
+        { wch: 38 },
+        { wch: 18 },
+        { wch: 12 },
+        { wch: 18 },
+        { wch: 16 },
+        { wch: 16 },
+      ]
+      XLSX.utils.book_append_sheet(wb, ws, 'Dragon Store')
+      const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' })
+      const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      const filename = `Ordine_DragonStore_${dateFormattedHyphen}.xlsx`
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      return true
+    }
+  }
+
+  // =========================================================================
+  // GESTIONE ATTUALE OTTIMIZZATA PER TUTTI GLI ALTRI GATE (LS Giochi, Playbazar, ecc.)
+  // =========================================================================
   const refStr = orderRef || getShopOrderReference(shop?.id)
   const isForced = Boolean(shippingInfo?.isForced || shop?.ordineForzato)
   const quotaPerPassenger = isForced ? Number(shippingInfo?.quotaPerPassenger || 0) : 0
-  const isDragonstore = shop?.id === 'dragonstore' || shop?.name?.toLowerCase().includes('dragonstore')
 
   // Raggruppa i giochi identici per Titolo + Socio + Metodo di Pagamento + Link
   const groupedMap = new Map()

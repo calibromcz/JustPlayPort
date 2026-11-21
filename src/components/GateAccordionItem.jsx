@@ -1216,34 +1216,63 @@ export function GateAccordionItem({
                           </div>
                         </div>
 
-                        {/* 2. Badge e Prezzo: griglia ordinata flex con wrap e tabular-nums */}
+                        {/* 2. Badge e Prezzo: visualizzazione immediata Prezzo Listino + Prezzo Scontato con % */}
                         <div
                           style={{ gap: '6px' }}
                           className="flex flex-wrap items-center text-xs"
                         >
-                          {/* Prezzo Finale Scontato */}
-                          <span
-                            style={{ whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}
-                            className="inline-flex items-center font-mono-code font-black text-sm text-emerald-700 dark:text-emerald-400"
-                          >
-                            💰 {it.prezzo.toFixed(2)} €
-                            {isForcedActive && (
-                              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 ml-1">
-                                +{shippingPerPassenger.toFixed(2).replace('.', ',')}€ sped.
-                              </span>
-                            )}
-                          </span>
+                          {(() => {
+                            const listPrice = it.prezzo_listino_totale !== undefined && it.prezzo_listino_totale !== null
+                              ? Number(it.prezzo_listino_totale)
+                              : it.prezzo_listino_unitario
+                                ? Number(it.prezzo_listino_unitario) * qty
+                                : it.prezzo || 0
 
-                          {/* Prezzo Listino Originale se presente e diverso */}
-                          {it.prezzo_listino_totale > 0 && Math.abs(it.prezzo_listino_totale - it.prezzo) > 0.05 && (
-                            <span
-                              style={{ whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}
-                              className="text-[11px] font-mono-code line-through text-slate-400 dark:text-slate-500"
-                              title="Prezzo di Listino"
-                            >
-                              {it.prezzo_listino_totale.toFixed(2)} €
-                            </span>
-                          )}
+                            const discountedPrice = it.prezzo || 0
+                            const isSale = it.is_offerta_sito || Boolean(it.is_already_on_sale)
+                            
+                            // Determinazione percentuale sconto da mostrare
+                            let discountLabel = null
+                            if (isSale) {
+                              discountLabel = 'In offerta'
+                            } else if (it.discount_badge) {
+                              discountLabel = it.discount_badge
+                            } else if (isDragonstore) {
+                              discountLabel = '-32%'
+                            } else if (shop?.discount) {
+                              discountLabel = `-${shop.discount.replace('-', '')}`
+                            } else if (listPrice > discountedPrice && listPrice > 0) {
+                              discountLabel = `-${Math.round(((listPrice - discountedPrice) / listPrice) * 100)}%`
+                            }
+
+                            return (
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                {/* Prezzo di Listino */}
+                                <span className="inline-flex items-center text-[11px] font-mono-code text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700">
+                                  Listino: <strong className="ml-1 text-slate-700 dark:text-slate-300">{listPrice.toFixed(2)} €</strong>
+                                </span>
+
+                                {/* Freccia e Prezzo Scontato con % */}
+                                <span className="inline-flex items-center gap-1 font-mono-code font-bold text-xs text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800/60">
+                                  <span>→</span>
+                                  {discountLabel && (
+                                    <span className="font-extrabold text-[10px] text-emerald-800 dark:text-emerald-300">
+                                      {discountLabel}:
+                                    </span>
+                                  )}
+                                  <strong className="text-sm font-black text-emerald-600 dark:text-emerald-400">
+                                    {discountedPrice.toFixed(2)} €
+                                  </strong>
+                                </span>
+
+                                {isForcedActive && (
+                                  <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
+                                    (+{shippingPerPassenger.toFixed(2).replace('.', ',')}€ sped.)
+                                  </span>
+                                )}
+                              </div>
+                            )
+                          })()}
 
                           {/* Badge Metodo di Pagamento */}
                           {it.metodo_pagamento && (
@@ -1266,23 +1295,6 @@ export function GateAccordionItem({
                               className="font-bold bg-emerald-100 text-emerald-800 border border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-200 dark:border-emerald-800 whitespace-nowrap"
                             >
                               Risparmio: +{it.risparmio.toFixed(2)}€
-                            </span>
-                          )}
-
-                          {/* Badge Offerta / Convenzione */}
-                          {it.is_offerta_sito ? (
-                            <span
-                              style={{ padding: '3px 8px', fontSize: '11px', borderRadius: '8px' }}
-                              className="font-bold bg-amber-100 text-amber-800 border border-amber-200 dark:bg-amber-950/50 dark:text-amber-200 dark:border-amber-800 whitespace-nowrap"
-                            >
-                              Offerta
-                            </span>
-                          ) : it.discount_badge && !it.risparmio && (
-                            <span
-                              style={{ padding: '3px 8px', fontSize: '11px', borderRadius: '8px' }}
-                              className="font-bold bg-blue-100 text-blue-800 border border-blue-200 dark:bg-blue-950/50 dark:text-blue-200 dark:border-blue-800 whitespace-nowrap"
-                            >
-                              {it.discount_badge}
                             </span>
                           )}
                         </div>
@@ -1325,7 +1337,7 @@ export function GateAccordionItem({
             )}
           </div>
 
-          {/* 4. Esportazione Distinta di Volo PDF, Foglio Google Sheets e Annuncio Telegram */}
+          {/* 4. Esportazione Distinta di Volo PDF, Foglio Excel / Numbers e Chiusura Ordine */}
           <div id="tutorial-gate-actions" className="pt-3 border-t border-slate-200 space-y-2.5 relative overflow-visible">
             {feedbackMessage && (
               <div className="p-2.5 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-900 font-bold text-xs text-center animate-ticket-pop-in">
@@ -1333,271 +1345,114 @@ export function GateAccordionItem({
               </div>
             )}
 
-            {/* SE LA SOGLIA È STATA RAGGIUNTA NATURALMENTE (SENZA FORZATURA) */}
-            {isReached && !ordineForzato ? (
-              <div className="space-y-2.5 animate-ticket-pop-in relative overflow-visible">
-                <div className="flex flex-col md:flex-row items-stretch gap-2.5 md:gap-3 relative overflow-visible">
-                  {/* 1. 📢 Annuncia al Volo */}
-                  <button
-                    type="button"
-                    onClick={handleAnnounceTelegram}
-                    className="flex-1 min-h-12 py-3 px-4 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 btn-aviation shadow-md bg-[#229ED9] hover:bg-[#1e8dbf] text-white cursor-pointer transition-all"
-                    title="Copia negli appunti il messaggio d'urgenza per il gruppo Telegram"
-                  >
-                    <span className="text-base leading-none">📢</span>
-                    <span>Annuncia al Volo</span>
-                  </button>
+            {/* PULSANTI DIRETTI AFFIANCATI: PDF ed Excel / Numbers (Stile Liquid Glass) */}
+            <div className="space-y-2.5 animate-ticket-pop-in relative overflow-visible">
+              {/* Opzione tariffa spedizione se presenti più opzioni e siamo sotto soglia */}
+              {!isReached && shippingOptions.length > 1 && (
+                <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs flex-wrap">
+                  <span className="font-bold text-slate-600 dark:text-slate-300">Opzione Spedizione:</span>
+                  <div className="flex items-center gap-1.5">
+                    {shippingOptions.map((opt) => (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => handleSelectShipping(opt.id)}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                          selectedShippingId === opt.id
+                            ? 'bg-blue-600 text-white shadow-xs font-black'
+                            : isNightMode
+                            ? 'bg-slate-900 text-slate-300 hover:bg-slate-700 border border-slate-700'
+                            : 'bg-white text-slate-700 hover:bg-slate-200 border border-slate-300'
+                        }`}
+                      >
+                        {opt.name} ({opt.price.toFixed(2).replace('.', ',')} €)
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-                  {/* 2. 🛫 Distinta di Partenza */}
-                  <div className={`relative flex-1 ${isDistintaDropdownOpen ? 'z-50' : 'z-20'}`}>
-                    {isDistintaDropdownOpen && (
-                      <>
-                        <div
-                          className="fixed inset-0 z-40"
-                          onClick={() => setIsDistintaDropdownOpen(false)}
-                        />
-                        <div className={`absolute bottom-full right-0 left-0 sm:left-auto sm:right-0 sm:w-80 mb-2 p-2 rounded-2xl border-2 shadow-2xl z-50 space-y-1.5 animate-ticket-pop-in text-left ${
-                          isNightMode ? 'bg-[#0f172a] border-[#f59e0b] text-white shadow-[0_0_20px_rgba(245,158,11,0.35)]' : 'bg-white border-slate-700 text-slate-800'
-                        }`}>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              handleDownloadPdf()
-                              setIsDistintaDropdownOpen(false)
-                            }}
-                            className={`w-full p-2.5 rounded-xl flex items-center gap-3 border transition-colors text-left font-black text-xs sm:text-sm cursor-pointer whitespace-nowrap ${
-                              isNightMode
-                                ? 'text-slate-100 hover:bg-slate-800/90 border-transparent hover:border-emerald-400/50'
-                                : 'text-slate-800 hover:bg-emerald-50 hover:text-emerald-900 border-transparent hover:border-emerald-200'
-                            }`}
-                          >
-                            <span className="text-xl leading-none shrink-0">📄</span>
-                            <span className="truncate">Scarica come PDF</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              handleExportExcel()
-                              setIsDistintaDropdownOpen(false)
-                            }}
-                            className={`w-full p-2.5 rounded-xl flex items-center gap-3 border transition-colors text-left font-black text-xs sm:text-sm cursor-pointer whitespace-nowrap ${
-                              isNightMode
-                                ? 'text-slate-100 hover:bg-slate-800/90 border-transparent hover:border-blue-400/50'
-                                : 'text-slate-800 hover:bg-blue-50 hover:text-blue-900 border-transparent hover:border-blue-200'
-                            }`}
-                          >
-                            <span className="text-xl leading-none shrink-0">📊</span>
-                            <span className="truncate">Crea Foglio Ordine (Google Sheets)</span>
-                          </button>
-                        </div>
-                      </>
-                    )}
+              {/* Riga Pulsanti Principali: 📄 PDF + 📊 Excel / Numbers (+ eventuale Forza Ordine se sotto soglia) */}
+              <div className="flex flex-col sm:flex-row items-stretch gap-2.5 relative overflow-visible">
+                {/* 1) 📄 PDF -> scarica subito la distinta in formato PDF (senza chiudere l'ordine) */}
+                <button
+                  type="button"
+                  disabled={isGateEmpty}
+                  onClick={handleDownloadPdf}
+                  className={`flex-1 min-h-12 py-3 px-4 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 btn-aviation shadow-md transition-all active:scale-[0.98] ${
+                    isGateEmpty
+                      ? 'opacity-50 grayscale cursor-not-allowed bg-slate-200 dark:bg-slate-800 text-slate-400 border border-slate-300 dark:border-slate-700'
+                      : isNightMode
+                      ? 'bg-slate-900/90 hover:bg-slate-800 text-rose-300 border border-rose-500/40 hover:border-rose-400 cursor-pointer shadow-[0_0_15px_rgba(244,63,94,0.15)]'
+                      : 'bg-white hover:bg-rose-50/80 text-rose-700 border border-rose-300 cursor-pointer'
+                  }`}
+                  title="Scarica subito la distinta in formato PDF"
+                >
+                  <span className="text-base leading-none">📄</span>
+                  <span>PDF</span>
+                </button>
 
+                {/* 2) 📊 Excel / Numbers -> scarica subito il file .xlsx (senza chiudere l'ordine) */}
+                <button
+                  type="button"
+                  disabled={isGateEmpty}
+                  onClick={handleExportExcel}
+                  className={`flex-1 min-h-12 py-3 px-4 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 btn-aviation shadow-md transition-all active:scale-[0.98] ${
+                    isGateEmpty
+                      ? 'opacity-50 grayscale cursor-not-allowed bg-slate-200 dark:bg-slate-800 text-slate-400 border border-slate-300 dark:border-slate-700'
+                      : isNightMode
+                      ? 'bg-slate-900/90 hover:bg-slate-800 text-emerald-300 border border-emerald-500/40 hover:border-emerald-400 cursor-pointer shadow-[0_0_15px_rgba(16,185,129,0.15)]'
+                      : 'bg-white hover:bg-emerald-50/80 text-emerald-700 border border-emerald-300 cursor-pointer'
+                  }`}
+                  title="Scarica subito il file Excel / Numbers (.xlsx)"
+                >
+                  <span className="text-base leading-none">📊</span>
+                  <span>Excel / Numbers</span>
+                </button>
+
+                {/* Tasto Forza Ordine / Annulla Forza Ordine se sotto soglia */}
+                {!isReached && (
+                  ordineForzato ? (
                     <button
                       type="button"
-                      onClick={() => setIsDistintaDropdownOpen((prev) => !prev)}
-                      className={`w-full min-h-12 py-3 px-4 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 btn-aviation shadow-md cursor-pointer transition-all border ${
-                        isNightMode
-                          ? 'bg-slate-900 hover:bg-slate-800 text-cyan-300 border-slate-700 hover:border-cyan-400'
-                          : 'bg-slate-800 hover:bg-slate-900 text-white border-slate-700'
-                      }`}
-                      title="Apri le opzioni per la distinta di partenza"
-                      aria-expanded={isDistintaDropdownOpen}
-                      aria-haspopup="true"
+                      onClick={handleToggleForce}
+                      className="w-full sm:w-auto min-h-12 py-3 px-4 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 btn-aviation shadow-md bg-orange-600 hover:bg-orange-700 text-white cursor-pointer transition-all shrink-0 active:scale-[0.98]"
+                      title="Annulla la forzatura dell'ordine"
                     >
-                      <span className="text-base leading-none">🛫</span>
-                      <span>Distinta di Partenza</span>
-                      <ChevronUp
-                        className={`w-4 h-4 ml-1 text-slate-300 transition-transform duration-200 ${
-                          isDistintaDropdownOpen ? 'rotate-180' : ''
-                        }`}
-                      />
+                      <span>❌ Annulla Forza (€ {shippingCost.toFixed(2).replace('.', ',')})</span>
                     </button>
-                  </div>
-                </div>
-
-                {/* REQUISITO 4: Pulsante ✅ Chiudi Ordine (Visibile quando la distinta è disponibile / pronta per essere chiusa) */}
-                {(hasDownloadedDistinta || isPronto) && effectiveItems.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={handleCloseOrder}
-                    className="w-full min-h-12 py-3 px-4 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 btn-aviation shadow-lg bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white cursor-pointer transition-all border border-emerald-500/80 animate-ticket-pop-in"
-                    title="Chiudi definitivamente l'ordine, archivialo nel Registro e azzera il Gate"
-                  >
-                    <span className="text-base leading-none">✅</span>
-                    <span>Chiudi Ordine</span>
-                  </button>
-                )}
-              </div>
-            ) : ordineForzato ? (
-              /* QUANDO ORDINE È FORZATO (Sotto soglia o forzato dall'utente) */
-              <div className="space-y-2.5 animate-ticket-pop-in relative overflow-visible">
-                <div className="flex flex-col md:flex-row md:flex-wrap items-stretch md:justify-center gap-2.5 md:gap-3 relative overflow-visible">
-                  {/* 1. 📢 Annuncia al Volo */}
-                  <button
-                    type="button"
-                    onClick={handleAnnounceTelegram}
-                    className="w-full md:w-auto md:flex-1 min-w-[150px] min-h-12 py-3 px-4 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 btn-aviation shadow-md bg-[#229ED9] hover:bg-[#1e8dbf] text-white cursor-pointer transition-all"
-                    title="Copia il messaggio di annuncio volo forzato per Telegram negli appunti"
-                  >
-                    <span className="text-base leading-none">📢</span>
-                    <span>Annuncia al Volo</span>
-                  </button>
-
-                  {/* 2. 🛫 Distinta di Partenza */}
-                  <div className={`relative w-full md:w-auto md:flex-1 min-w-[150px] ${isDistintaDropdownOpen ? 'z-50' : 'z-20'}`}>
-                    {isDistintaDropdownOpen && (
-                      <>
-                        <div
-                          className="fixed inset-0 z-40"
-                          onClick={() => setIsDistintaDropdownOpen(false)}
-                        />
-                        <div className={`absolute bottom-full right-0 left-0 sm:left-auto sm:right-0 sm:w-80 mb-2 p-2 rounded-2xl border-2 shadow-2xl z-50 space-y-1.5 animate-ticket-pop-in text-left ${
-                          isNightMode ? 'bg-[#0f172a] border-[#f59e0b] text-white shadow-[0_0_20px_rgba(245,158,11,0.35)]' : 'bg-white border-slate-700 text-slate-800'
-                        }`}>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              handleDownloadPdf()
-                              setIsDistintaDropdownOpen(false)
-                            }}
-                            className={`w-full p-2.5 rounded-xl flex items-center gap-3 border transition-colors text-left font-black text-xs sm:text-sm cursor-pointer whitespace-nowrap ${
-                              isNightMode
-                                ? 'text-slate-100 hover:bg-slate-800/90 border-transparent hover:border-emerald-400/50'
-                                : 'text-slate-800 hover:bg-emerald-50 hover:text-emerald-900 border-transparent hover:border-emerald-200'
-                            }`}
-                          >
-                            <span className="text-xl leading-none shrink-0">📄</span>
-                            <span className="truncate">Scarica come PDF</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              handleExportExcel()
-                              setIsDistintaDropdownOpen(false)
-                            }}
-                            className={`w-full p-2.5 rounded-xl flex items-center gap-3 border transition-colors text-left font-black text-xs sm:text-sm cursor-pointer whitespace-nowrap ${
-                              isNightMode
-                                ? 'text-slate-100 hover:bg-slate-800/90 border-transparent hover:border-blue-400/50'
-                                : 'text-slate-800 hover:bg-blue-50 hover:text-blue-900 border-transparent hover:border-blue-200'
-                            }`}
-                          >
-                            <span className="text-xl leading-none shrink-0">📊</span>
-                            <span className="truncate">Crea Foglio Ordine (Google Sheets)</span>
-                          </button>
-                        </div>
-                      </>
-                    )}
-
+                  ) : (
                     <button
                       type="button"
-                      onClick={() => setIsDistintaDropdownOpen((prev) => !prev)}
-                      className={`w-full min-h-12 py-3 px-4 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 btn-aviation shadow-md cursor-pointer transition-all border ${
-                        isNightMode
-                          ? 'bg-slate-900 hover:bg-slate-800 text-cyan-300 border-slate-700 hover:border-cyan-400'
-                          : 'bg-slate-800 hover:bg-slate-900 text-white border-slate-700'
+                      disabled={isGateEmpty}
+                      onClick={handleToggleForce}
+                      className={`w-full sm:w-auto min-h-12 py-3 px-4 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 btn-aviation shadow-md transition-all shrink-0 active:scale-[0.98] ${
+                        isGateEmpty
+                          ? 'opacity-50 grayscale cursor-not-allowed bg-slate-200 dark:bg-slate-800 text-slate-400 border border-slate-300 dark:border-slate-700'
+                          : 'bg-orange-500 hover:bg-orange-600 text-white cursor-pointer'
                       }`}
-                      title="Apri le opzioni per la distinta di partenza"
-                      aria-expanded={isDistintaDropdownOpen}
-                      aria-haspopup="true"
+                      title="Bypassa la soglia minima e forza la partenza dell'ordine dividendo le spese di spedizione"
                     >
-                      <span className="text-base leading-none">🛫</span>
-                      <span>Distinta di Partenza</span>
-                      <ChevronUp
-                        className={`w-4 h-4 ml-1 text-slate-300 transition-transform duration-200 ${
-                          isDistintaDropdownOpen ? 'rotate-180' : ''
-                        }`}
-                      />
+                      <span className="text-base leading-none">🚀</span>
+                      <span>Forza Ordine (€ {shippingCost.toFixed(2).replace('.', ',')})</span>
                     </button>
-                  </div>
-
-                  {/* 3. Tasto Annulla Forzatura / Forza ordine (€ X,XX) */}
-                  <button
-                    type="button"
-                    onClick={handleToggleForce}
-                    className="w-full md:w-auto min-h-12 py-3 px-4 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 btn-aviation shadow-md bg-orange-600 hover:bg-orange-700 text-white cursor-pointer transition-all shrink-0"
-                    title="Annulla la forzatura dell'ordine"
-                  >
-                    <span>❌ Annulla Forza Ordine (€ {shippingCost.toFixed(2).replace('.', ',')})</span>
-                  </button>
-                </div>
-
-                {/* REQUISITO 4: Pulsante ✅ Chiudi Ordine anche per ordine forzato */}
-                {(hasDownloadedDistinta || isPronto) && effectiveItems.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={handleCloseOrder}
-                    className="w-full min-h-12 py-3 px-4 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 btn-aviation shadow-lg bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white cursor-pointer transition-all border border-emerald-500/80 animate-ticket-pop-in"
-                    title="Chiudi definitivamente l'ordine, archivialo nel Registro e azzera il Gate"
-                  >
-                    <span className="text-base leading-none">✅</span>
-                    <span>Chiudi Ordine</span>
-                  </button>
+                  )
                 )}
               </div>
-            ) : (
-              /* QUANDO SOTTO SOGLIA E NON ANCORA FORZATO: SOTTO LA LISTA I DUE PULSANTI */
-              <div className="space-y-2.5">
-                {/* Selettore tariffa se il negozio ha più di 1 opzione */}
-                {shippingOptions.length > 1 && (
-                  <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs flex-wrap">
-                    <span className="font-bold text-slate-600 dark:text-slate-300">Opzione Spedizione:</span>
-                    <div className="flex items-center gap-1.5">
-                      {shippingOptions.map((opt) => (
-                        <button
-                          key={opt.id}
-                          type="button"
-                          onClick={() => handleSelectShipping(opt.id)}
-                          className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                            selectedShippingId === opt.id
-                              ? 'bg-blue-600 text-white shadow-xs font-black'
-                              : isNightMode
-                              ? 'bg-slate-900 text-slate-300 hover:bg-slate-700 border border-slate-700'
-                              : 'bg-white text-slate-700 hover:bg-slate-200 border border-slate-300'
-                          }`}
-                        >
-                          {opt.name} ({opt.price.toFixed(2).replace('.', ',')} €)
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
-                {/* REQUISITO 1: Sotto la lista, pulsanti "Annuncia al volo" e "Forza ordine (€ 4,00)" */}
-                <div className="flex flex-col md:flex-row items-stretch gap-2.5 md:gap-3">
-                  {/* 1. 📢 Annuncia al Volo */}
-                  <button
-                    type="button"
-                    onClick={handleAnnounceTelegram}
-                    className="flex-1 min-h-12 py-3 px-4 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 btn-aviation shadow-md bg-[#229ED9] hover:bg-[#1e8dbf] text-white cursor-pointer transition-all"
-                    title="Copia il messaggio di annuncio per Telegram negli appunti"
-                  >
-                    <span className="text-base leading-none">📢</span>
-                    <span>Annuncia al Volo</span>
-                  </button>
-
-                  {/* 2. 🚀 Forza Ordine con costo totale tra parentesi: es. Forza ordine (€ 4,00) */}
-                  <button
-                    type="button"
-                    disabled={isGateEmpty}
-                    onClick={handleToggleForce}
-                    className={`flex-1 min-h-12 py-3 px-4 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 btn-aviation shadow-md transition-all ${
-                      isGateEmpty
-                        ? 'opacity-50 grayscale cursor-not-allowed bg-slate-200 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-300 dark:border-slate-700'
-                        : 'bg-orange-500 hover:bg-orange-600 text-white cursor-pointer'
-                    }`}
-                    title={
-                      isGateEmpty
-                        ? 'Imbarca prima un gioco al Gate per attivare il Volo Forzato'
-                        : "Bypassa la soglia minima e forza la partenza dell'ordine dividendo le spese di spedizione"
-                    }
-                  >
-                    <span className="text-base leading-none">🚀</span>
-                    <span>Forza ordine (€ {shippingCost.toFixed(2).replace('.', ',')})</span>
-                  </button>
-                </div>
-              </div>
-            )}
+              {/* REQUISITO 4: Pulsante ✅ Chiudi Ordine (Visibile quando la distinta è pronta / scaricata o soglia raggiunta/forzata) */}
+              {(hasDownloadedDistinta || isPronto) && effectiveItems.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleCloseOrder}
+                  className="w-full min-h-12 py-3 px-4 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 btn-aviation shadow-lg bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] text-white cursor-pointer transition-all border border-emerald-500/80 animate-ticket-pop-in"
+                  title="Chiudi definitivamente l'ordine, archivialo nel Registro e azzera il Gate"
+                >
+                  <span className="text-base leading-none">✅</span>
+                  <span>Chiudi Ordine</span>
+                </button>
+              )}
+            </div>
           </div>
 
           {/* REQUISITO 3: Link Diretto al Sito Ufficiale del Negozio */}
