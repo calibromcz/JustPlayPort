@@ -471,8 +471,11 @@ export function getShopEffectiveItems(shop, items = []) {
     const cleanListPrice = typeof listPrice === 'number' ? listPrice : parseFloat(listPrice) || 0
     const qty = it.quantita || 1
 
-    // Ricalcolo: 32% se listini >= 300€ o forzato, altrimenti 0%
-    const discounted = Number((cleanListPrice * multiplier).toFixed(2))
+    // Ricalcolo in avanti: 32% se listini >= 300€ o forzato (esclusi articoli "Già in offerta"), altrimenti 0%
+    const isOffer = Boolean(it.is_offerta_sito || it.is_already_on_sale)
+    const effectiveMultiplier = isOffer ? 1.0 : multiplier
+    const effectivePercent = isOffer ? 0 : percent
+    const discounted = Number((cleanListPrice * effectiveMultiplier).toFixed(2))
     const savings = Number((cleanListPrice - discounted).toFixed(2))
 
     return {
@@ -481,7 +484,7 @@ export function getShopEffectiveItems(shop, items = []) {
       prezzo_listino_totale: cleanListPrice,
       prezzo_listino_unitario: Number((cleanListPrice / qty).toFixed(2)),
       risparmio: savings,
-      discount_badge: percent > 0 ? `-${percent}%` : null,
+      discount_badge: isOffer ? 'Offerta' : (effectivePercent > 0 ? `-${effectivePercent}%` : null),
     }
   })
 }

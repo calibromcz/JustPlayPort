@@ -52,17 +52,7 @@ export function incrementShopOrderReference(shopId) {
  */
 export function groupGateItems(items = [], shop = null) {
   const groups = new Map()
-
-  // Percentuale sconto convenzione del negozio
-  let shopDiscountPct = 0
-  if (shop?.discount) {
-    const match = String(shop.discount).match(/(\d+)\s*%/)
-    if (match) shopDiscountPct = parseInt(match[1], 10)
-  }
   const isDragonstore = shop?.id === 'dragonstore' || shop?.name?.toLowerCase().includes('dragonstore')
-  if (isDragonstore) {
-    shopDiscountPct = 32
-  }
 
   items.forEach((item) => {
     const title = (item.nome_gioco || item.title || 'Gioco').trim()
@@ -79,24 +69,14 @@ export function groupGateItems(items = [], shop = null) {
 
     const isAlreadyOffer = Boolean(item.is_offerta_sito || item.is_already_on_sale)
 
-    // Fallback sicuro se listino mancante o uguale al prezzo scontato con sconto attivo
-    let fallbackUnitList = rawPrice
-    if (!isAlreadyOffer && shopDiscountPct > 0 && shopDiscountPct < 100) {
-      fallbackUnitList = Number((rawPrice / (1 - shopDiscountPct / 100)).toFixed(2))
-    }
-
-    let listPriceUnit = fallbackUnitList
+    // Il Prezzo di Listino è immutabile: legge i campi dedicati se presenti, altrimenti usa rawPrice (MAI calcoli inversi)
+    let listPriceUnit = rawPrice
     if (item.prezzo_listino_unitario !== undefined && item.prezzo_listino_unitario !== null) {
-      listPriceUnit = Number(item.prezzo_listino_unitario) || fallbackUnitList
+      listPriceUnit = Number(item.prezzo_listino_unitario) || rawPrice
     } else if (item.prezzo_listino !== undefined && item.prezzo_listino !== null) {
-      listPriceUnit = Number(item.prezzo_listino) || fallbackUnitList
+      listPriceUnit = Number(item.prezzo_listino) || rawPrice
     } else if (item.prezzo_listino_totale !== undefined && item.prezzo_listino_totale !== null && qty > 0) {
       listPriceUnit = Number(item.prezzo_listino_totale) / qty
-    }
-
-    // Se il listino risultasse ancora identico al prezzo scontato nonostante sconto negozio attivo (> 0) e non in offerta, usa fallbackUnitList
-    if (!isAlreadyOffer && shopDiscountPct > 0 && Math.abs(listPriceUnit - rawPrice) < 0.01) {
-      listPriceUnit = fallbackUnitList
     }
 
     const listPriceTot = Number((listPriceUnit * qty).toFixed(2))
@@ -111,7 +91,7 @@ export function groupGateItems(items = [], shop = null) {
       discountLabel = `-${discountPct}%`
     } else if (isAlreadyOffer) {
       discountLabel = 'Offerta'
-    } else if (shop?.discount && typeof shop.discount === 'string') {
+    } else if (shop?.discount && typeof shop.discount === 'string' && !isDragonstore) {
       discountLabel = shop.discount
     }
 
@@ -237,8 +217,11 @@ export function exportGatePdf(shop, items = [], customOrderRef = null, customDat
   doc.setDrawColor(226, 232, 240) // slate-200
   doc.roundedRect(marginX, 38, pageWidth - marginX * 2, 11, 1.5, 1.5, 'FD')
 
+  const groupedItems = groupGateItems(items, shop)
+  const totalListGatePrice = groupedItems.reduce((sum, item) => sum + (item.totalListPrice || 0), 0)
+
   const isDragonstore = shop?.id === 'dragonstore' || shop?.name?.toLowerCase().includes('dragonstore')
-  const isDragonSuper = isDragonstore && (totalGatePrice >= 300 || isForced)
+  const isDragonSuper = isDragonstore && (totalListGatePrice >= 300 || isForced)
   const discountInfo = isDragonstore
     ? (isDragonSuper ? '    |    Sconto: -32% (Attivo)' : '    |    Sconto: 0% (Listino)')
     : ''
@@ -253,7 +236,6 @@ export function exportGatePdf(shop, items = [], customOrderRef = null, customDat
   )
 
   // 3. TABELLA ORDINI
-  const groupedItems = groupGateItems(items, shop)
 
   const tableHead = isForced
     ? [

@@ -286,7 +286,7 @@ export function GateAccordionItem({
 
     // Calcolo automatico prezzo scontato e risparmio: per Dragonstore inserimento Prezzo di Listino con sconto base 0% (il 32% si applica dinamicamente al raggiungimento dei 300€ o forzato)
     const discountToUse = isDragonstore ? null : shop.discount
-    const pricing = calculateItemPriceWithQuantity(parsedPrice, discountToUse, quantity, isDragonstore ? false : isAlreadyOnSale)
+    const pricing = calculateItemPriceWithQuantity(parsedPrice, discountToUse, quantity, isAlreadyOnSale)
 
     onAddItem({
       id: `${Date.now()}-${Math.random().toString(36).substr(2, 7)}`,
@@ -295,12 +295,12 @@ export function GateAccordionItem({
       nome_gioco: trimmedGame,
       url: gameUrl.trim() || '',
       quantita: pricing.quantity,
-      prezzo: pricing.finalPrice,
+      prezzo: isDragonstore ? Number((parsedPrice * quantity).toFixed(2)) : pricing.finalPrice,
       prezzo_listino_unitario: parsedPrice,
       prezzo_listino_totale: Number((parsedPrice * quantity).toFixed(2)),
-      risparmio: pricing.savings || 0,
-      is_offerta_sito: isDragonstore ? false : pricing.isAlreadyOnSale,
-      discount_badge: isDragonstore ? null : pricing.discountBadge,
+      risparmio: isDragonstore ? 0 : (pricing.savings || 0),
+      is_offerta_sito: isAlreadyOnSale,
+      discount_badge: isDragonstore ? (isAlreadyOnSale ? 'Offerta' : null) : pricing.discountBadge,
       metodo_pagamento: paymentMethod,
       created_at: new Date().toISOString(),
     })
@@ -1238,7 +1238,7 @@ export function GateAccordionItem({
                             } else if (it.discount_badge) {
                               discountLabel = it.discount_badge
                             } else if (isDragonstore) {
-                              discountLabel = '-32%'
+                              discountLabel = '0%'
                             } else if (shop?.discount) {
                               discountLabel = `-${shop.discount.replace('-', '')}`
                             } else if (listPrice > discountedPrice && listPrice > 0) {

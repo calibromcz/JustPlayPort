@@ -699,21 +699,7 @@ export function App() {
             const prezzoFinale = parseFloat(b.prezzo_finale) || 0
             const quantitaVal = b.quantita || 1
 
-            // Determinazione sconto negozio per calcolo listino originario se mancante
-            let discountPercent = 0
-            if (matchedShop?.discount) {
-              const m = String(matchedShop.discount).match(/(\d+)\s*%/)
-              if (m) discountPercent = parseInt(m[1], 10)
-            } else if (targetShopId === 'dragonstore') {
-              discountPercent = 32
-            }
-
-            // Calcolo prezzo listino di fallback se mancante o uguale al prezzo scontato
-            let fallbackListinoUnit = prezzoFinale
-            if (discountPercent > 0 && discountPercent < 100) {
-              fallbackListinoUnit = Number((prezzoFinale / (1 - discountPercent / 100)).toFixed(2))
-            }
-
+            // Il Prezzo di Listino è un dato immutabile: legge i campi dedicati se presenti, senza MAI fare calcoli inversi
             const rawListinoUnit =
               b.prezzo_listino_unitario !== undefined && b.prezzo_listino_unitario !== null
                 ? Number(b.prezzo_listino_unitario)
@@ -721,9 +707,9 @@ export function App() {
                   ? Number(b.prezzo_listino)
                   : b.prezzo_listino_totale !== undefined && b.prezzo_listino_totale !== null && quantitaVal > 0
                     ? Number(b.prezzo_listino_totale) / quantitaVal
-                    : fallbackListinoUnit
+                    : prezzoFinale
 
-            const listinoUnitario = rawListinoUnit > 0 ? Number(rawListinoUnit.toFixed(2)) : fallbackListinoUnit
+            const listinoUnitario = rawListinoUnit > 0 ? Number(rawListinoUnit.toFixed(2)) : prezzoFinale
             const listinoTotale = Number((listinoUnitario * quantitaVal).toFixed(2))
             const risparmioTot = Math.max(0, Number((listinoTotale - (prezzoFinale * quantitaVal)).toFixed(2)))
 
@@ -742,7 +728,7 @@ export function App() {
               prezzo_listino_totale: listinoTotale,
               risparmio: risparmioTot,
               is_offerta_sito: false,
-              discount_badge: discountPercent > 0 ? `-${discountPercent}%` : null,
+              discount_badge: null,
               metodo_pagamento: b.metodo_pagamento || 'Contanti',
               created_at: b.created_at || new Date().toISOString(),
             }

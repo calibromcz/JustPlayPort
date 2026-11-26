@@ -139,8 +139,8 @@ export function NewLuggageModal({
       const pricing = calculateItemPriceWithQuantity(parsedPrice, effectiveDiscount, quantity, isAlreadyOnSale)
       finalItemPrice = isDragonstore ? Number((parsedPrice * quantity).toFixed(2)) : pricing.finalPrice
       savings = isDragonstore ? 0 : pricing.savings || 0
-      discountBadge = isDragonstore ? null : pricing.discountBadge
-      isSaleSite = isDragonstore ? false : pricing.isAlreadyOnSale
+      discountBadge = isDragonstore ? (isAlreadyOnSale ? 'Offerta' : null) : pricing.discountBadge
+      isSaleSite = isAlreadyOnSale
     }
 
     if (onAddItem) {
