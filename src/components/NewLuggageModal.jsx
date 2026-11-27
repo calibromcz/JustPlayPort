@@ -36,14 +36,19 @@ export function NewLuggageModal({
   const [formError, setFormError] = useState('')
   const [justAdded, setJustAdded] = useState(false)
 
-  const selectableShops = isPreorder ? shops : activeGateShops
+  // Nel selettore Gate/Store lasciamo sempre visibile anche Playbazar
+  const selectableShops = shops
+  const isPlaybazarSelected = selectedShopId === 'playbazar'
 
   // Quando si apre, aggiorna lo shop selezionato e il passeggero se presenti
   useEffect(() => {
     if (isOpen) {
-      if (initialShopId && initialShopId !== 'playbazar') setSelectedShopId(initialShopId)
-      else if (!selectedShopId || (!isPreorder && selectedShopId === 'playbazar')) {
+      if (initialShopId && initialShopId !== 'playbazar') {
+        setSelectedShopId(initialShopId)
+        setIsPreorder(false)
+      } else if (!selectedShopId || selectedShopId === 'playbazar') {
         setSelectedShopId(defaultActiveShopId)
+        setIsPreorder(false)
       }
       if (savedPassengerName && !passengerName) setPassengerName(savedPassengerName)
       setFormError('')
@@ -51,12 +56,13 @@ export function NewLuggageModal({
     }
   }, [isOpen, initialShopId, savedPassengerName])
 
-  // Sicurezza: se l'utente toglie la spunta Hangar mentre è selezionato Playbazar, reimposta sul primo Gate attivo
+  // Forza automaticamente la modalità Hangar quando Playbazar è selezionato e resetta "Già in offerta"
   useEffect(() => {
-    if (!isPreorder && selectedShopId === 'playbazar') {
-      setSelectedShopId(defaultActiveShopId)
+    if (isPlaybazarSelected) {
+      setIsPreorder(true)
+      setIsAlreadyOnSale(false)
     }
-  }, [isPreorder, selectedShopId, defaultActiveShopId])
+  }, [isPlaybazarSelected])
 
   // Blocco scroll body quando aperta
   useEffect(() => {
@@ -113,8 +119,8 @@ export function NewLuggageModal({
 
     setFormError('')
 
-    // Se opzione "Metti in Hangar Prevendite" è attiva
-    if (isPreorder && onAddPrevendita) {
+    // Se Playbazar è selezionato o "Metti in Hangar Prevendite" è attivo -> salva SEMPRE in Hangar
+    if ((isPlaybazarSelected || isPreorder) && onAddPrevendita) {
       onAddPrevendita({
         nome_utente: cleanUser,
         nome_passeggero: cleanUser,
@@ -131,6 +137,13 @@ export function NewLuggageModal({
       setJustAdded(true)
       setTimeout(() => {
         setJustAdded(false)
+        setGameName('')
+        setGameUrl('')
+        setRawPriceInput('')
+        setQuantity(1)
+        setIsAlreadyOnSale(false)
+        setIsPreorder(false)
+        setPreorderReleaseDate('')
         onClose()
       }, 700)
       return
@@ -265,7 +278,16 @@ export function NewLuggageModal({
                 <select
                   id="modal-store-select"
                   value={selectedShopId}
-                  onChange={(e) => setSelectedShopId(e.target.value)}
+                  onChange={(e) => {
+                    const nextId = e.target.value
+                    setSelectedShopId(nextId)
+                    if (nextId === 'playbazar') {
+                      setIsPreorder(true)
+                      setIsAlreadyOnSale(false)
+                    } else if (selectedShopId === 'playbazar') {
+                      setIsPreorder(false)
+                    }
+                  }}
                   className={`w-full py-2.5 pl-3 pr-10 rounded-xl border text-sm font-bold appearance-none transition-all outline-hidden cursor-pointer ${
                     isNightMode
                       ? 'bg-zinc-900 border-white/20 text-white focus:border-blue-500'
@@ -382,72 +404,31 @@ export function NewLuggageModal({
             />
           </div>
 
-          {/* PASSO 2.4: METODO DI PAGAMENTO (SOLO Contanti e PayPal) */}
-          <div>
-            <label className="block text-xs font-semibold mb-1.5 text-slate-700 dark:text-slate-300">
-              Metodo di Pagamento
-            </label>
-            <div className="flex gap-2">
-              {PAYMENT_OPTIONS.map((opt) => {
-                const isSelected = paymentMethod === opt.id
-                return (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => setPaymentMethod(opt.id)}
-                    className={`flex-1 py-2 px-2.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                      isSelected
-                        ? `${opt.activeColor} shadow-md ring-2 ring-blue-500/30`
-                        : isNightMode
-                        ? 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
-                        : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
-                    }`}
-                  >
-                    <span>{opt.emoji}</span>
-                    <span>{opt.label}</span>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
+          {/* SE PLAYBAZAR È SELEZIONATO: BOX PIENO "📦 Metti in Hangar Prevendite" AL POSTO DI PAGAMENTO E OFFERTA */}
+          {isPlaybazarSelected ? (
+            <div className="space-y-3 pt-1 animate-fade-in">
+              <div className={`w-full p-4 rounded-2xl border-2 flex items-center justify-between gap-3 shadow-sm ${
+                isNightMode
+                  ? 'bg-amber-500/15 border-amber-400/50 text-amber-200'
+                  : 'bg-amber-50 border-amber-400 text-amber-900'
+              }`}>
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl leading-none shrink-0">📦</span>
+                  <div>
+                    <div className="font-black text-sm sm:text-base tracking-tight">
+                      📦 Metti in Hangar Prevendite
+                    </div>
+                    <div className="text-[11px] opacity-85 font-medium">
+                      Playbazar è attivo solo per prevendite: verrà salvato direttamente nell'Hangar.
+                    </div>
+                  </div>
+                </div>
+                <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500 text-slate-950 shrink-0">
+                  Attivo
+                </span>
+              </div>
 
-          {/* CHECKBOX "GIÀ IN OFFERTA" & "PREORDINE IN HANGAR" */}
-          <div className="space-y-2 pt-1">
-            <label className={`flex items-center gap-2.5 p-2.5 rounded-xl border cursor-pointer select-none ${
-              isNightMode ? 'bg-white/5 border-white/10' : 'bg-slate-50 border-slate-200'
-            }`}>
-              <input
-                type="checkbox"
-                checked={isAlreadyOnSale}
-                onChange={(e) => setIsAlreadyOnSale(e.target.checked)}
-                className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600"
-              />
-              <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                Già in offerta? <span className="text-[11px] text-slate-500 dark:text-slate-400">(Nessun ulteriore sconto convenzione)</span>
-              </span>
-            </label>
-
-            <label className={`flex items-center gap-2.5 p-2.5 rounded-xl border cursor-pointer select-none ${
-              isPreorder
-                ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-300'
-                : isNightMode
-                ? 'bg-white/5 border-white/10'
-                : 'bg-slate-50 border-slate-200'
-            }`}>
-              <input
-                type="checkbox"
-                checked={isPreorder}
-                onChange={(e) => setIsPreorder(e.target.checked)}
-                className="w-4 h-4 rounded text-amber-500 focus:ring-amber-500 cursor-pointer accent-amber-500"
-              />
-              <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                📦 Metti in Hangar Prevendite <span className="text-[11px] text-slate-500 dark:text-slate-400">(Preordine in attesa)</span>
-              </span>
-            </label>
-
-            {/* CAMPO DATA DI USCITA (SPUNTA FUORI SOLO SE PREORDINE SELEZIONATO) */}
-            {isPreorder && (
-              <div className={`p-3 rounded-2xl border space-y-1.5 animate-slide-up ${
+              <div className={`p-3 rounded-2xl border space-y-1.5 ${
                 isNightMode ? 'bg-amber-500/5 border-amber-500/20' : 'bg-amber-50/70 border-amber-200'
               }`}>
                 <label className="block text-xs font-bold text-amber-800 dark:text-amber-300">
@@ -467,8 +448,98 @@ export function NewLuggageModal({
                   Potrai aggiornare la data o cambiare store direttamente nell'Hangar in qualsiasi momento.
                 </span>
               </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <>
+              {/* PASSO 2.4: METODO DI PAGAMENTO (SOLO Contanti e PayPal) */}
+              <div>
+                <label className="block text-xs font-semibold mb-1.5 text-slate-700 dark:text-slate-300">
+                  Metodo di Pagamento
+                </label>
+                <div className="flex gap-2">
+                  {PAYMENT_OPTIONS.map((opt) => {
+                    const isSelected = paymentMethod === opt.id
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => setPaymentMethod(opt.id)}
+                        className={`flex-1 py-2 px-2.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                          isSelected
+                            ? `${opt.activeColor} shadow-md ring-2 ring-blue-500/30`
+                            : isNightMode
+                            ? 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10'
+                            : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        <span>{opt.emoji}</span>
+                        <span>{opt.label}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* CHECKBOX "GIÀ IN OFFERTA" & "PREORDINE IN HANGAR" */}
+              <div className="space-y-2 pt-1">
+                <label className={`flex items-center gap-2.5 p-2.5 rounded-xl border cursor-pointer select-none ${
+                  isNightMode ? 'bg-white/5 border-white/10' : 'bg-slate-50 border-slate-200'
+                }`}>
+                  <input
+                    type="checkbox"
+                    checked={isAlreadyOnSale}
+                    onChange={(e) => setIsAlreadyOnSale(e.target.checked)}
+                    className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer accent-blue-600"
+                  />
+                  <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                    Già in offerta? <span className="text-[11px] text-slate-500 dark:text-slate-400">(Nessun ulteriore sconto convenzione)</span>
+                  </span>
+                </label>
+
+                <label className={`flex items-center gap-2.5 p-2.5 rounded-xl border cursor-pointer select-none ${
+                  isPreorder
+                    ? 'bg-amber-500/10 border-amber-500/30 text-amber-700 dark:text-amber-300'
+                    : isNightMode
+                    ? 'bg-white/5 border-white/10'
+                    : 'bg-slate-50 border-slate-200'
+                }`}>
+                  <input
+                    type="checkbox"
+                    checked={isPreorder}
+                    onChange={(e) => setIsPreorder(e.target.checked)}
+                    className="w-4 h-4 rounded text-amber-500 focus:ring-amber-500 cursor-pointer accent-amber-500"
+                  />
+                  <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                    📦 Metti in Hangar Prevendite <span className="text-[11px] text-slate-500 dark:text-slate-400">(Preordine in attesa)</span>
+                  </span>
+                </label>
+
+                {/* CAMPO DATA DI USCITA (SPUNTA FUORI SOLO SE PREORDINE SELEZIONATO) */}
+                {isPreorder && (
+                  <div className={`p-3 rounded-2xl border space-y-1.5 animate-slide-up ${
+                    isNightMode ? 'bg-amber-500/5 border-amber-500/20' : 'bg-amber-50/70 border-amber-200'
+                  }`}>
+                    <label className="block text-xs font-bold text-amber-800 dark:text-amber-300">
+                      📅 Data stimata di uscita
+                    </label>
+                    <input
+                      type="date"
+                      value={preorderReleaseDate}
+                      onChange={(e) => setPreorderReleaseDate(e.target.value)}
+                      className={`w-full px-3 py-2 rounded-xl text-xs sm:text-sm font-medium border focus:outline-none focus:ring-2 focus:ring-amber-500/40 ${
+                        isNightMode
+                          ? 'bg-slate-900 border-amber-500/30 text-white'
+                          : 'bg-white border-amber-300 text-slate-900'
+                      }`}
+                    />
+                    <span className="block text-[10px] text-slate-500 dark:text-slate-400">
+                      Potrai aggiornare la data o cambiare store direttamente nell'Hangar in qualsiasi momento.
+                    </span>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
 
           {/* ANTEPRIMA PREZZO IN TEMPO REALE */}
           {previewInfo && !isPreorder && (
@@ -522,7 +593,12 @@ export function NewLuggageModal({
               {justAdded ? (
                 <>
                   <Check className="w-5 h-5 stroke-[2.5]" />
-                  <span>{isPreorder ? 'Aggiunto in Hangar! 📦' : 'Imbarcato con successo! ✈️'}</span>
+                  <span>{(isPreorder || isPlaybazarSelected) ? 'Aggiunto in Hangar! 📦' : 'Imbarcato con successo! ✈️'}</span>
+                </>
+              ) : isPlaybazarSelected ? (
+                <>
+                  <Plane className="w-5 h-5" />
+                  <span>Imbarca al Gate</span>
                 </>
               ) : isPreorder ? (
                 <>
