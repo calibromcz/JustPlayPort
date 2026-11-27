@@ -19,9 +19,8 @@ export function NewLuggageModal({
   isNightMode = false,
 }) {
   const activeGateShops = shops.filter((s) => s.id !== 'playbazar' && s.name?.toLowerCase() !== 'playbazar')
-  const selectableShops = isPreorder ? shops : activeGateShops
-
   const defaultActiveShopId = activeGateShops[0]?.id || shops[0]?.id || 'ls-giochi'
+
   const [selectedShopId, setSelectedShopId] = useState(
     initialShopId && initialShopId !== 'playbazar' ? initialShopId : defaultActiveShopId
   )
@@ -36,6 +35,8 @@ export function NewLuggageModal({
   const [preorderReleaseDate, setPreorderReleaseDate] = useState('')
   const [formError, setFormError] = useState('')
   const [justAdded, setJustAdded] = useState(false)
+
+  const selectableShops = isPreorder ? shops : activeGateShops
 
   // Quando si apre, aggiorna lo shop selezionato e il passeggero se presenti
   useEffect(() => {
