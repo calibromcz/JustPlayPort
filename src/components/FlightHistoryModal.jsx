@@ -44,8 +44,9 @@ export function FlightHistoryModal({
   // Handler per download PDF del volo storico
   const handleDownloadPdf = (flight) => {
     try {
-      exportGatePdf(flight.shop, flight.items, flight.orderNumber, flight.date)
-      setFeedback(`📄 PDF del ${flight.orderNumber} (${flight.shop.name}) scaricato!`)
+      const safeShop = flight.shop || { id: flight.shopId || 'archive', name: flight.shopName || 'Negozio' }
+      exportGatePdf(safeShop, flight.items || [], flight.orderNumber, flight.date)
+      setFeedback(`📄 PDF del ${flight.orderNumber || ''} (${safeShop.name}) scaricato!`)
       setTimeout(() => setFeedback(''), 3500)
     } catch (err) {
       console.error('Errore download PDF storico:', err)
@@ -56,9 +57,10 @@ export function FlightHistoryModal({
   // Handler per download Foglio Ordine XLSX del volo storico
   const handleDownloadExcel = async (flight) => {
     try {
-      const ok = await exportGateExcel(flight.shop, flight.items, flight.orderNumber, flight.date)
+      const safeShop = flight.shop || { id: flight.shopId || 'archive', name: flight.shopName || 'Negozio' }
+      const ok = await exportGateExcel(safeShop, flight.items || [], flight.orderNumber, flight.date)
       if (ok) {
-        setFeedback(`📊 Foglio Ordine del ${flight.orderNumber} (${flight.shop.name}) scaricato!`)
+        setFeedback(`📊 Foglio Ordine del ${flight.orderNumber || ''} (${safeShop.name}) scaricato!`)
         setTimeout(() => setFeedback(''), 3500)
       }
     } catch (err) {

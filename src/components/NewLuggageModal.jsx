@@ -18,7 +18,13 @@ export function NewLuggageModal({
   onAddPrevendita,
   isNightMode = false,
 }) {
-  const [selectedShopId, setSelectedShopId] = useState(initialShopId || shops[0]?.id || 'ls-giochi')
+  const activeGateShops = shops.filter((s) => s.id !== 'playbazar' && s.name?.toLowerCase() !== 'playbazar')
+  const selectableShops = isPreorder ? shops : activeGateShops
+
+  const defaultActiveShopId = activeGateShops[0]?.id || shops[0]?.id || 'ls-giochi'
+  const [selectedShopId, setSelectedShopId] = useState(
+    initialShopId && initialShopId !== 'playbazar' ? initialShopId : defaultActiveShopId
+  )
   const [passengerName, setPassengerName] = useState(savedPassengerName || '')
   const [gameName, setGameName] = useState('')
   const [gameUrl, setGameUrl] = useState('')
@@ -34,13 +40,22 @@ export function NewLuggageModal({
   // Quando si apre, aggiorna lo shop selezionato e il passeggero se presenti
   useEffect(() => {
     if (isOpen) {
-      if (initialShopId) setSelectedShopId(initialShopId)
-      else if (!selectedShopId && shops[0]) setSelectedShopId(shops[0].id)
+      if (initialShopId && initialShopId !== 'playbazar') setSelectedShopId(initialShopId)
+      else if (!selectedShopId || (!isPreorder && selectedShopId === 'playbazar')) {
+        setSelectedShopId(defaultActiveShopId)
+      }
       if (savedPassengerName && !passengerName) setPassengerName(savedPassengerName)
       setFormError('')
       setJustAdded(false)
     }
   }, [isOpen, initialShopId, savedPassengerName])
+
+  // Sicurezza: se l'utente toglie la spunta Hangar mentre è selezionato Playbazar, reimposta sul primo Gate attivo
+  useEffect(() => {
+    if (!isPreorder && selectedShopId === 'playbazar') {
+      setSelectedShopId(defaultActiveShopId)
+    }
+  }, [isPreorder, selectedShopId, defaultActiveShopId])
 
   // Blocco scroll body quando aperta
   useEffect(() => {
@@ -55,7 +70,7 @@ export function NewLuggageModal({
 
   if (!isOpen) return null
 
-  const selectedShop = shops.find((s) => s.id === selectedShopId) || shops[0] || {}
+  const selectedShop = selectableShops.find((s) => s.id === selectedShopId) || selectableShops[0] || {}
   const isDragonstore = selectedShop?.id === 'dragonstore' || selectedShop?.name?.toLowerCase().includes('dragonstore')
 
   // Parsing del prezzo di listino inserito: legge RIGOROSAMENTE e SOLTANTO il valore del campo input rawPriceInput
@@ -256,7 +271,7 @@ export function NewLuggageModal({
                       : 'bg-white border-slate-300 text-slate-800 focus:border-blue-600 shadow-2xs'
                   }`}
                 >
-                  {shops.map((s) => (
+                  {selectableShops.map((s) => (
                     <option key={s.id} value={s.id} className="text-slate-900 bg-white dark:text-white dark:bg-zinc-900">
                       {s.name} {s.discount ? `(${s.discount})` : ''}
                     </option>

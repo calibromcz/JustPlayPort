@@ -368,21 +368,32 @@ export function HangarPrevenditeModal({
                           : 'bg-white/70 border-gray-200/80 hover:bg-white shadow-2xs'
                       }`}
                     >
-                      {/* Checkbox Automazione "Disponibile" (SOLO per il proprietario del gioco) */}
+                      {/* Checkbox Automazione "Disponibile" (SOLO per il proprietario del gioco; disabilitato per Playbazar che non ha più Gate attivo) */}
                       {isOwner ? (
-                        <label
-                          className="flex items-center gap-2.5 cursor-pointer shrink-0 select-none group/check"
-                          title="Spunta se il gioco è uscito per spostarlo automaticamente nel Gate!"
-                        >
-                          <input
-                            type="checkbox"
-                            onChange={() => onSpostaNelGate && onSpostaNelGate(item)}
-                            className="w-5 h-5 rounded-lg border-2 border-amber-400 text-emerald-600 focus:ring-emerald-500/30 cursor-pointer transition-all"
-                          />
-                          <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 group-hover/check:underline hidden sm:inline">
-                            Disponibile?
-                          </span>
-                        </label>
+                        (item.id_negozio === 'playbazar' || item.negozio_scelto === 'playbazar') ? (
+                          <div
+                            className="flex items-center gap-1.5 shrink-0 select-none opacity-65 px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20"
+                            title="Il Gate Playbazar non è più attivo. Modifica lo store (✏️) se vuoi imbarcarlo in un altro Gate."
+                          >
+                            <span className="text-[11px] font-bold text-amber-600 dark:text-amber-400">
+                              🚫 Solo Hangar
+                            </span>
+                          </div>
+                        ) : (
+                          <label
+                            className="flex items-center gap-2.5 cursor-pointer shrink-0 select-none group/check"
+                            title="Spunta se il gioco è uscito per spostarlo automaticamente nel Gate!"
+                          >
+                            <input
+                              type="checkbox"
+                              onChange={() => onSpostaNelGate && onSpostaNelGate(item)}
+                              className="w-5 h-5 rounded-lg border-2 border-amber-400 text-emerald-600 focus:ring-emerald-500/30 cursor-pointer transition-all"
+                            />
+                            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 group-hover/check:underline hidden sm:inline">
+                              Disponibile?
+                            </span>
+                          </label>
+                        )
                       ) : (
                         <div
                           className="flex items-center gap-1.5 shrink-0 select-none opacity-60 px-2 py-1 rounded-lg bg-black/5 dark:bg-white/5"

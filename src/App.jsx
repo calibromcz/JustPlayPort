@@ -319,8 +319,12 @@ export function App() {
       'dungeon-dice': 0,
     }
 
-    const targetShopId = prevendita.id_negozio || 'playbazar'
-    const targetShop = shops.find((s) => s.id === targetShopId) || shops[0]
+    const targetShopId = prevendita.id_negozio || 'ls-giochi'
+    if (targetShopId === 'playbazar') {
+      alert("Il Gate Playbazar non è più attivo. Cambia lo store nell'Hangar (icona ✏️) se desideri imbarcare il gioco in un altro Gate.")
+      return
+    }
+    const targetShop = shops.find((s) => s.id === targetShopId) || shops.find((s) => s.id !== 'playbazar') || shops[0]
     
     // Recupero percentuale sconto (dal dizionario o fallback da targetShop.discount)
     let percentualeSconto = 0
@@ -1262,9 +1266,13 @@ export function App() {
     )
   }
 
-  // REQUISITO 2: ORDINAMENTO DINAMICO DEI GATE (Le schede pronte salgono AUTOMATICAMENTE in cima)
+  // REQUISITO 2: ORDINAMENTO DINAMICO DEI GATE (Esclude Playbazar dai Gate attivi; le schede pronte salgono AUTOMATICAMENTE in cima)
+  const activeShops = useMemo(() => {
+    return shops.filter((s) => s.id !== 'playbazar' && s.name?.toLowerCase() !== 'playbazar')
+  }, [shops])
+
   const sortedShops = useMemo(() => {
-    return [...shops].sort((a, b) => {
+    return [...activeShops].sort((a, b) => {
       const itemsA = getShopEffectiveItems(a, cartItems.filter((it) => it.id_negozio === a.id))
       const totalA = itemsA.reduce((sum, it) => sum + (it.prezzo || 0), 0)
       const isDragonA = a.id === 'dragonstore' || a.name?.toLowerCase().includes('dragonstore')
@@ -1300,7 +1308,7 @@ export function App() {
 
       return 0
     })
-  }, [shops, cartItems])
+  }, [activeShops, cartItems])
 
   const readyGatesCount = useMemo(() => {
     return sortedShops.filter((shop) => {
@@ -1318,17 +1326,20 @@ export function App() {
     }).length
   }, [sortedShops, cartItems])
 
-  // Totali imbarcati calcolati per l'intero gruppo
+  // Totali imbarcati calcolati SOLO per i Gate attivi (esclude eventuali residui di Playbazar)
   const totalCartAmount = useMemo(() => {
-    return shops.reduce((sum, shop) => {
+    return activeShops.reduce((sum, shop) => {
       const storeItems = getShopEffectiveItems(shop, cartItems.filter((it) => it.id_negozio === shop.id))
       return sum + storeItems.reduce((s, it) => s + (it.prezzo || 0), 0)
     }, 0)
-  }, [shops, cartItems])
+  }, [activeShops, cartItems])
 
   const totalGamesCount = useMemo(() => {
-    return cartItems.reduce((sum, it) => sum + (it.quantita || 1), 0)
-  }, [cartItems])
+    const activeIds = new Set(activeShops.map((s) => s.id))
+    return cartItems
+      .filter((it) => activeIds.has(it.id_negozio))
+      .reduce((sum, it) => sum + (it.quantita || 1), 0)
+  }, [activeShops, cartItems])
 
   // PARTE 2: CALCOLO DELLA SPESA PERSONALE DEL SINGOLO SOCIO LOGGATO
   // (Somma i suoi giochi nei Gate aperti + i suoi giochi nei voli chiusi/archiviati in questo mese)
@@ -1529,7 +1540,7 @@ export function App() {
           <h2 className={`text-xs sm:text-sm font-black uppercase tracking-wider ${
             isNightMode ? 'text-slate-100' : 'text-slate-900'
           }`}>
-            Gate d'Imbarco ({shops.length} Voli)
+            Gate d'Imbarco ({sortedShops.length} Voli)
           </h2>
         </div>
 
